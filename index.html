@@ -454,4 +454,556 @@ function detectWhalePeriods(h, minVolMult = 1.8) {
       periods.push({
         type: ev.type, startIdx: ev.idx, endIdx: ev.idx,
         startDate: ev.date, endDate: ev.date, sessions: 1,
-        totalVolume: ev.volum
+        totalVolume: ev.volume, maxVolRatio: ev.volRatio,
+        startClose: ev.close, endClose: ev.close,
+        periodLow: ev.low, periodHigh: ev.high,
+        supportAtStart: ev.supportAtStart, resistanceAtStart: ev.resistanceAtStart
+      });
+    }
+  }
+
+  const latestClose = h.at(-1).close;
+  for (const p of periods) {
+    const afterSlice = h.slice(p.endIdx + 1, p.endIdx + 11);
+    const compareClose = afterSlice.length ? afterSlice.at(-1).close : latestClose;
+    p.postChangePct = pct(compareClose, p.endClose);
+    p.brokeResistance = p.endClose > p.resistanceAtStart || compareClose > p.resistanceAtStart;
+    p.brokeSupport = p.endClose < p.supportAtStart || compareClose < p.supportAtStart;
+  }
+
+  return periods.reverse();
+}
+
+function analyze(t) {
+  if (analysisCache.has(t)) return analysisCache.get(t);
+  const h = history(t), a = h.map(x => x.close);
+  if (!h.length) return null;
+  const last = h.at(-1), prev = h.at(-2), change = prev ? pct(last.close, prev.close) : 0;
+  const rs = rsi(a), s5 = sma(a, 5), s20 = sma(a, 20), m = macd(a), p = pressure(h);
+  const prior = h.slice(-21, -1);
+  const priorHigh = prior.length ? Math.max(...prior.map(x => x.high)) : 0;
+  const breakout = prior.length >= 10 && last.close > priorHigh && p.ratio >= 1.5;
+
+  let score = 0;
+  score += last.close > s20 ? 20 : 0;
+  score += s5 > s20 ? 10 : 0;
+  score += rs === null ? 0 : rs >= 50 && rs <= 70 ? 15 : rs > 70 ? 7 : rs >= 40 ? 8 : 0;
+  score += m ? (m.hist > 0 ? 15 : 0) + (m.line > m.signal ? 5 : 0) : 0;
+  score += p.ratio >= 1.5 ? 15 : p.ratio >= 1.2 ? 10 : 0;
+  score += p.buy >= 65 ? 20 : p.buy >= 55 ? 12 : p.sell >= 70 ? 0 : 7;
+  score = Math.min(100, score);
+
+  const signal = breakout ? "اختراق محتمل" : score >= 75 ? "إيجابية قوية" : score >= 60 ? "إيجابية حذرة" : score >= 40 ? "مراقبة / محايد" : "ضعف نسبي";
+  const res = {
+    h, last, prev, change, rs, s5, s20, m, p, priorHigh, breakout, score, signal,
+    support: Math.min(...h.slice(-20).map(x => x.low)),
+    resistance: Math.max(...h.slice(-20).map(x => x.high))
+  };
+  analysisCache.set(t, res);
+  return res;
+}
+
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+function openTab(tabName) {
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === tabName));
+  document.querySelectorAll(".section").forEach(s => s.classList.toggle("active", s.id === tabName));
+  if (tabName === "whales") renderWhales();
+  if (tabName === "analysis") renderAnalysis();
+}
+
+function goToWhales(ticker) {
+  selectedWhalePeriodIdx = 0;
+  openTab("whales");
+  $("whaleTicker").value = ticker;
+  renderWhales();
+}
+
+function refresh() {
+  analysisCache.clear();
+  const valid = validRecords();
+  const latest = latestByTicker().sort((a, b) => a.ticker.localeCompare(b.ticker));
+  const dates = valid.map(r => r.date).sort();
+  const newest = dates.at(-1) || "";
+
+  $("stockCount").textContent = latest.length;
+  $("recordCount").textContent = valid.length;
+  $("lastDate").textContent = dateFmt(newest);
+  $("marketVolume").textContent = fmt(latest.filter(r => r.date === newest).reduce((s, r) => s + r.volume, 0), 0);
+
+  const q = $("searchStock").value.trim().toUpperCase();
+  const mode = $("sortMarket").value;
+  const list = latest.filter(r => (r.ticker + " " + r.name).toUpperCase().includes(q));
+
+  list.sort((a, b) => {
+    if (mode === "volume") return b.volume - a.volume;
+    if (mode === "ticker") return a.ticker.localeCompare(b.ticker);
+    if (mode === "change") return (analyze(b.ticker)?.change || 0) - (analyze(a.ticker)?.change || 0);
+    if (mode === "score") return (analyze(b.ticker)?.score || 0) - (analyze(a.ticker)?.score || 0);
+    return b.date.localeCompare(a.date);
+  });
+
+  $("marketRows").innerHTML = list.map(r => {
+    const a = analyze(r.ticker), p = a?.change || 0;
+    return `<tr class="clickable" data-ticker="${esc(r.ticker)}">
+      <td><b>${esc(r.ticker)}</b><br><small>${esc(r.name)}</small></td>
+      <td>${fmt(r.close)}</td>
+      <td class="${p >= 0 ? 'positive' : 'negative'}">${p >= 0 ? '+' : ''}${fmt(p)}%</td>
+      <td>${fmt(r.volume, 0)}</td>
+      <td>${a?.p.tag || "—"}</td>
+      <td>${dateFmt(r.date)}</td>
+    </tr>`;
+  }).join("") || '<tr><td colspan="6">لا توجد بيانات. انتقل إلى تبويب <b>استيراد Excel</b> لتحميل الملفات.</td></tr>';
+
+  $("stockCards").innerHTML = list.map(r => {
+    const a = analyze(r.ticker);
+    return a ? `<article class="stockcard" data-ticker="${esc(r.ticker)}">
+      <div class="stockhead"><b>${esc(r.ticker)} · ${esc(r.name)}</b><span class="pill">${a.score}/100</span></div>
+      <div style="font-size:20px;margin:8px 0">${fmt(r.close)} MAD <small class="${a.change >= 0 ? 'positive' : 'negative'}">${a.change >= 0 ? '+' : ''}${fmt(a.change)}%</small></div>
+      <div class="label">${a.signal} · ${a.p.tag}</div>
+      <div class="meter"><i style="width:${a.score}%"></i></div>
+      <small>نسبة السيولة مقارنة بمتوسط 20 جلسة: ${a.p.avg ? fmt(a.p.ratio, 2) + "×" : "غير متاح"}</small>
+    </article>` : "";
+  }).join("");
+
+  const optionsHtml = latest.map(r => `<option value="${esc(r.ticker)}">${esc(r.ticker)} — ${esc(r.name)}</option>`).join("");
+  const selA = $("analysisTicker"), oldA = selA.value;
+  selA.innerHTML = optionsHtml;
+  if (latest.some(r => r.ticker === oldA)) selA.value = oldA;
+
+  const selW = $("whaleTicker"), oldW = selW.value;
+  selW.innerHTML = optionsHtml;
+  if (latest.some(r => r.ticker === oldW)) selW.value = oldW;
+
+  renderAnalysis();
+  renderWhales();
+  renderRadar();
+  renderRanking();
+  renderWatch();
+}
+
+function renderWhales() {
+  const t = $("whaleTicker").value;
+  const mult = Number($("whaleSensitivity").value) || 1.8;
+  const h = history(t);
+  if (!h.length) {
+    $("whaleKpis").innerHTML = "";
+    $("whaleSummary").textContent = "استورد بيانات السهم أولاً لعرض تحليل الحيتان.";
+    $("whaleRows").innerHTML = "";
+    drawWhaleChart([], [], null);
+    return;
+  }
+
+  const periods = detectWhalePeriods(h, mult);
+  if (selectedWhalePeriodIdx >= periods.length) selectedWhalePeriodIdx = 0;
+  const activePeriod = periods[selectedWhalePeriodIdx] || null;
+
+  const buyCount = periods.filter(p => p.type === "BUY").length;
+  const sellCount = periods.filter(p => p.type === "SELL").length;
+
+  const kpis = [
+    ["إجمالي الفترات المرصودة", periods.length],
+    ["فترات تجميع (شراء)", buyCount],
+    ["فترات تصريف (بيع)", sellCount],
+    ["الدعم عند بداية الفترة", activePeriod ? fmt(activePeriod.supportAtStart) + " MAD" : "—"],
+    ["المقاومة عند بداية الفترة", activePeriod ? fmt(activePeriod.resistanceAtStart) + " MAD" : "—"]
+  ];
+  $("whaleKpis").innerHTML = kpis.map(c => `<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div></div>`).join("");
+
+  if (!activePeriod) {
+    $("whaleSummary").innerHTML = `لم يتم رصد فترات سيولة مؤسسية استثنائية لسهم <b>${esc(t)}</b> عند مستوى حساسية <b>${mult}×</b>. جرّب خفض الحساسية إلى <b>1.5×</b> أو استيراد تاريخ جلسات أطول.`;
+    $("whaleRows").innerHTML = '<tr><td colspan="8">لا توجد فترات مطابقة لهذا المعيار.</td></tr>';
+    drawWhaleChart(h.slice(-90), [], null);
+    return;
+  }
+
+  const isBuy = activePeriod.type === "BUY";
+  const periodSpanTxt = activePeriod.startDate === activePeriod.endDate
+    ? `جلسة <b>${dateFmt(activePeriod.startDate)}</b>`
+    : `من <b>${dateFmt(activePeriod.startDate)}</b> إلى <b>${dateFmt(activePeriod.endDate)}</b> (${activePeriod.sessions} جلسات)`;
+
+  $("whaleSummary").innerHTML = `
+    <b>الفترة المحددة (${isBuy ? "🟢 تجميع / شراء حيتان" : "🔴 تصريف / بيع حيتان"}):</b> ${periodSpanTxt} · ذروة السيولة: <b>${fmt(activePeriod.maxVolRatio, 2)}×</b> المتوسط.<br>
+    <b>مستويات السعر لحظة بدء الحركة:</b> كان السهم يتحرك فوق دعم تاريخي عند <b>${fmt(activePeriod.supportAtStart)} MAD</b> وأسفل مقاومة عند <b>${fmt(activePeriod.resistanceAtStart)} MAD</b>.<br>
+    <b>قراءة السلوك:</b> ${isBuy
+      ? (activePeriod.brokeResistance ? "نجحت السيولة الشرائية في اختراق المقاومة التاريخية التي كانت قائمة عند بداية التجميع." : "تم امتصاص العرض قرب الدعم، والسهم لا يزال يختبر اختراق المقاومة التاريخية.")
+      : (activePeriod.brokeSupport ? "أدى الضغط البيعي إلى كسر الدعم التاريخي الذي كان قائماً عند بداية التصريف." : "ظهر تصريف قرب المقاومة التاريخية مع بقاء الدعم صامداً حتى الآن.")}
+  `;
+
+  $("whaleRows").innerHTML = periods.map((p, idx) => {
+    const buy = p.type === "BUY";
+    const rangeTxt = p.startDate === p.endDate ? dateFmt(p.startDate) : `${dateFmt(p.startDate)} ← ${dateFmt(p.endDate)}`;
+    return `<tr class="clickable ${idx === selectedWhalePeriodIdx ? 'selected-row' : ''}" data-whale-idx="${idx}">
+      <td><span class="pill ${buy ? 'buy' : 'sell'}">${buy ? 'شراء / تجميع' : 'بيع / تصريف'}</span></td>
+      <td><b>${rangeTxt}</b></td>
+      <td>${p.sessions}</td>
+      <td>${fmt(p.periodLow)} — ${fmt(p.periodHigh)}</td>
+      <td><b>${fmt(p.maxVolRatio, 2)}×</b></td>
+      <td class="info-txt"><b>${fmt(p.supportAtStart)}</b></td>
+      <td class="warning"><b>${fmt(p.resistanceAtStart)}</b></td>
+      <td class="${p.postChangePct >= 0 ? 'positive' : 'negative'}">${p.postChangePct >= 0 ? '+' : ''}${fmt(p.postChangePct)}%</td>
+    </tr>`;
+  }).join("");
+
+  const startView = Math.max(0, activePeriod.startIdx - 35);
+  const endView = Math.min(h.length, activePeriod.endIdx + 35);
+  const slice = h.slice(startView, endView);
+  drawWhaleChart(slice, periods, activePeriod, startView);
+}
+
+function drawWhaleChart(slice, allPeriods, activePeriod, offsetIdx = 0) {
+  const c = $("whaleChart");
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  const w = Math.max(300, rect.width || 900);
+  const h = 280;
+  c.width = w * dpr;
+  c.height = h * dpr;
+  const ctx = c.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  if (!slice.length) return;
+
+  const prices = slice.flatMap(x => [x.close, x.high, x.low]);
+  if (activePeriod) prices.push(activePeriod.supportAtStart, activePeriod.resistanceAtStart);
+  let min = Math.min(...prices), max = Math.max(...prices);
+  if (max === min) { max += 1; min = Math.max(0, min - 1); }
+
+  const padL = 62, padR = 16, padT = 22, padB = 26;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const getX = i => padL + i * plotW / Math.max(1, slice.length - 1);
+  const getY = v => padT + plotH - ((v - min) / (max - min)) * plotH;
+
+  for (const p of allPeriods) {
+    const localStart = p.startIdx - offsetIdx;
+    const localEnd = p.endIdx - offsetIdx;
+    if (localEnd < 0 || localStart >= slice.length) continue;
+    const x1 = getX(Math.max(0, localStart)) - 4;
+    const x2 = getX(Math.min(slice.length - 1, localEnd)) + 4;
+    ctx.fillStyle = p.type === "BUY" ? "rgba(32, 201, 151, 0.16)" : "rgba(255, 107, 107, 0.16)";
+    ctx.fillRect(x1, padT, Math.max(8, x2 - x1), plotH);
+  }
+
+  if (activePeriod) {
+    ctx.save();
+    ctx.setLineDash([6, 5]);
+    ctx.lineWidth = 1.8;
+
+    const yRes = getY(activePeriod.resistanceAtStart);
+    ctx.strokeStyle = "#ffc857";
+    ctx.beginPath(); ctx.moveTo(padL, yRes); ctx.lineTo(w - padR, yRes); ctx.stroke();
+    ctx.fillStyle = "#ffc857";
+    ctx.font = "11px sans-serif";
+    ctx.fillText(`مقاومة البداية: ${fmt(activePeriod.resistanceAtStart)}`, padL + 6, Math.max(padT + 11, yRes - 5));
+
+    const ySup = getY(activePeriod.supportAtStart);
+    ctx.strokeStyle = "#4dabf7";
+    ctx.beginPath(); ctx.moveTo(padL, ySup); ctx.lineTo(w - padR, ySup); ctx.stroke();
+    ctx.fillStyle = "#4dabf7";
+    ctx.fillText(`دعم البداية: ${fmt(activePeriod.supportAtStart)}`, padL + 6, Math.min(padT + plotH - 4, ySup + 13));
+    ctx.restore();
+  }
+
+  ctx.strokeStyle = "#20c997";
+  ctx.lineWidth = 2.4;
+  ctx.beginPath();
+  slice.forEach((r, i) => {
+    const x = getX(i), y = getY(r.close);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = "#9bb1c1";
+  ctx.font = "12px sans-serif";
+  ctx.fillText(fmt(max), 6, padT + 4);
+  ctx.fillText(fmt(min), 6, padT + plotH);
+  ctx.fillText(dateFmt(slice[0].date), padL, h - 6);
+  ctx.fillText(dateFmt(slice.at(-1).date), w - padR - 68, h - 6);
+}
+
+function renderAnalysis() {
+  const t = $("analysisTicker").value, a = analyze(t);
+  if (!a) {
+    $("analysisKpis").innerHTML = "";
+    $("analysisText").textContent = "اختر سهماً بعد استيراد البيانات.";
+    drawChart([]);
+    return;
+  }
+  const { last, change, rs, s5, s20, m, p } = a;
+  const cells = [
+    ["آخر سعر", fmt(last.close) + " MAD"],
+    ["التغير اليومي", (change >= 0 ? "+" : "") + fmt(change) + "%"],
+    ["RSI 14", rs === null ? "غير كاف" : fmt(rs)],
+    ["SMA 5", fmt(s5)],
+    ["SMA 20", fmt(s20)],
+    ["MACD Hist", m ? fmt(m.hist) : "غير كاف"],
+    ["ضغط الشراء", p.buy + "%"],
+    ["نسبة الحجم", p.avg ? fmt(p.ratio, 2) + "×" : "غير متاح"],
+    ["قوة الإشارة", a.score + "/100"],
+    ["الإشارة", a.signal]
+  ];
+  $("analysisKpis").innerHTML = cells.map(c => `<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div></div>`).join("");
+  $("analysisText").innerHTML = `آخر جلسة: <b>${dateFmt(last.date)}</b> · دعم تقريبي (20 جلسة): <b>${fmt(a.support)}</b> · مقاومة (20 جلسة): <b>${fmt(a.resistance)}</b><br>
+    الاتجاه: ${last.close > s20 ? "السعر فوق متوسط 20 جلسة" : "السعر تحت متوسط 20 جلسة"}. ${rs === null ? "بيانات RSI غير كافية." : rs > 70 ? "RSI في منطقة تشبع شرائي نسبي." : rs < 30 ? "RSI في منطقة تشبع بيعي نسبي." : "RSI في المنطقة المتوازنة."}<br>
+    MACD: ${m ? (m.hist > 0 ? "زخم موجب" : "زخم سالب") : "يتطلب 26 جلسة على الأقل"}. ${a.breakout ? "تم تجاوز أعلى سعر للنطاق السابق مع سيولة مرتفعة." : "لا يوجد اختراق مؤكد وفق شروط الرادار."}`;
+  drawChart(a.h.slice(-60));
+}
+
+function drawChart(histSlice) {
+  const c = $("priceChart");
+  const dpr = window.devicePixelRatio || 1;
+  const rect = c.getBoundingClientRect();
+  const w = Math.max(300, rect.width || 900);
+  const h = 260;
+  c.width = w * dpr;
+  c.height = h * dpr;
+  const ctx = c.getContext("2d");
+  ctx.scale(dpr, dpr);
+  ctx.clearRect(0, 0, w, h);
+  if (!histSlice.length) return;
+
+  const closes = histSlice.map(x => x.close);
+  let min = Math.min(...closes), max = Math.max(...closes);
+  if (max === min) { max += 1; min = Math.max(0, min - 1); }
+
+  const padL = 58, padR = 16, padT = 20, padB = 26;
+  const plotW = w - padL - padR, plotH = h - padT - padB;
+  const getX = i => padL + i * plotW / Math.max(1, closes.length - 1);
+  const getY = v => padT + plotH - ((v - min) / (max - min)) * plotH;
+
+  ctx.strokeStyle = "rgba(155,177,193,0.12)";
+  ctx.lineWidth = 1;
+  [0, 0.5, 1].forEach(t => {
+    const y = padT + plotH * t;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(w - padR, y); ctx.stroke();
+  });
+
+  ctx.strokeStyle = "#20c997";
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  closes.forEach((v, i) => {
+    const x = getX(i), y = getY(v);
+    i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+  });
+  ctx.stroke();
+
+  ctx.fillStyle = "#9bb1c1";
+  ctx.font = "12px sans-serif";
+  ctx.fillText(fmt(max), 6, padT + 4);
+  ctx.fillText(fmt(min), 6, padT + plotH);
+  ctx.fillText(dateFmt(histSlice[0].date), padL, h - 6);
+  ctx.fillText(dateFmt(histSlice.at(-1).date), w - padR - 68, h - 6);
+}
+
+function renderRadar() {
+  const latest = latestByTicker();
+  $("radarRows").innerHTML = latest.map(r => {
+    const p = analyze(r.ticker).p;
+    return `<tr class="clickable" data-ticker="${esc(r.ticker)}">
+      <td><b>${esc(r.ticker)}</b></td>
+      <td>${fmt(r.volume, 0)}</td>
+      <td>${p.avg ? fmt(p.avg, 0) : "—"}</td>
+      <td>${p.avg ? fmt(p.ratio, 2) + "×" : "—"}</td>
+      <td class="positive">${p.buy}%</td>
+      <td class="negative">${p.sell}%</td>
+      <td>${p.acc}</td>
+    </tr>`;
+  }).join("") || '<tr><td colspan="7">لا توجد بيانات.</td></tr>';
+}
+
+function renderRanking() {
+  const arr = latestByTicker().map(r => ({ r, a: analyze(r.ticker) })).filter(x => x.a).sort((x, y) => y.a.score - x.a.score);
+  $("rankingRows").innerHTML = arr.map((x, i) => `<tr class="clickable" data-ticker="${esc(x.r.ticker)}">
+    <td>${i + 1}</td>
+    <td><b>${esc(x.r.ticker)}</b></td>
+    <td>${x.a.score}/100</td>
+    <td class="${x.a.change >= 0 ? 'positive' : 'negative'}">${x.a.change >= 0 ? '+' : ''}${fmt(x.a.change)}%</td>
+    <td>${x.a.p.avg ? fmt(x.a.p.ratio, 2) + "×" : "—"}</td>
+    <td>${x.a.p.tag}</td>
+    <td>${x.a.signal}</td>
+  </tr>`).join("") || '<tr><td colspan="7">لا توجد بيانات كافية.</td></tr>';
+}
+
+function getWatch() {
+  try { return JSON.parse(localStorage.getItem(WATCH_KEY) || "[]"); } catch { return []; }
+}
+
+function renderWatch() {
+  const w = getWatch();
+  $("watchRows").innerHTML = w.map((x, i) => {
+    const a = analyze(x.ticker);
+    const info = a ? ` · السعر: <b>${fmt(a.last.close)}</b> (${a.signal})` : "";
+    return `<div class="card" style="margin-top:8px;display:flex;justify-content:space-between;align-items:center;gap:8px">
+      <div><b>${esc(x.ticker)}</b> — ${esc(x.note || "بدون ملاحظة")}${info}</div>
+      <button class="danger del-watch" data-idx="${i}">حذف</button>
+    </div>`;
+  }).join("") || '<p class="muted" style="margin-top:8px">قائمة المراقبة فارغة.</p>';
+}
+
+function extractSheetRows(sheet) {
+  const matrix = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: "", raw: true });
+  const headerKeywords = ["session", "seance", "date", "ticker", "code", "symbole", "instrument", "derniercours", "lastprice", "close"];
+  let headerRowIdx = 0;
+  for (let i = 0; i < Math.min(15, matrix.length); i++) {
+    const rowNorm = matrix[i].map(norm);
+    const hits = rowNorm.filter(c => headerKeywords.includes(c)).length;
+    if (hits >= 2) { headerRowIdx = i; break; }
+  }
+  return XLSX.utils.sheet_to_json(sheet, { range: headerRowIdx, defval: "", raw: true });
+}
+
+function headerIndex(headers, keys) {
+  return headers.findIndex(h => keys.includes(norm(h)));
+}
+
+async function importFiles() {
+  const files = [...$("excelFiles").files];
+  if (!files.length) { $("importStatus").textContent = "اختر ملف Excel أو CSV أولاً."; return; }
+  if (typeof XLSX === "undefined") { $("importStatus").textContent = "تعذر تحميل مكتبة Excel. تحقق من الاتصال بالإنترنت."; return; }
+
+  let totalAdded = 0, totalUpdated = 0, totalSkipped = 0;
+
+  for (const file of files) {
+    try {
+      const fileTicker = file.name.replace(/\.[^.]+$/, "").split(/[\s_-]+/)[0].toUpperCase();
+      const buf = await file.arrayBuffer();
+      const wb = XLSX.read(buf, { type: "array", cellDates: true });
+      const sheet = wb.Sheets[wb.SheetNames[0]];
+      const rows = extractSheetRows(sheet);
+
+      const parsedRows = rows.map(row => {
+        const keys = Object.keys(row);
+        const get = aliases => {
+          const i = headerIndex(keys, aliases.map(norm));
+          return i < 0 ? "" : row[keys[i]];
+        };
+        return {
+          ticker: get(["Ticker", "Code", "Symbole", "Mnemonic"]),
+          name: get(["Instrument", "Name", "Valeur", "Libelle"]),
+          date: get(["Séance", "Seance", "Session", "Date"]),
+          open: get(["Opening", "Ouverture", "Open", "Premier Cours"]),
+          close: get(["Last Price", "Dernier Cours", "Close", "Cloture", "Cours"]),
+          high: get(["High", "Plus Haut", "Max"]),
+          low: get(["Low", "Plus Bas", "Min"]),
+          volume: get(["Volume (MAD)", "Volume", "Capitaux", "Montant"]),
+          shares: get(["Traded Shares", "Titres Echanges", "Quantite"]),
+          trades: get(["Number of Trades", "Nb Transactions", "Transactions"])
+        };
+      });
+
+      const res = mergeRecords(parsedRows, fileTicker);
+      totalAdded += res.added;
+      totalUpdated += res.updated;
+      totalSkipped += res.skipped;
+    } catch (err) {
+      $("importStatus").textContent = `خطأ في قراءة الملف ${file.name}: ${err.message}`;
+      return;
+    }
+  }
+
+  $("importStatus").textContent = `تم الاستيراد بنجاح: ${totalAdded} سجل جديد، ${totalUpdated} سجل محدّث (تم تجاهل ${totalSkipped} صف غير مكتمل).`;
+}
+
+async function syncFromJsonUrl() {
+  const url = ($("jsonFeedUrl").value || "./data.json").trim();
+  $("importStatus").textContent = `جاري جلب التحديثات من ${url}...`;
+  try {
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) throw new Error(`رمز الحالة: ${res.status}`);
+    const payload = await res.json();
+    const list = Array.isArray(payload) ? payload : payload.records;
+    if (!Array.isArray(list)) throw new Error("تنسيق JSON غير متوقع");
+
+    const stats = mergeRecords(list);
+    $("importStatus").textContent = `تم التحديث من ${url}: ${stats.added} سجل جديد، ${stats.updated} سجل محدّث (تم تجاهل ${stats.skipped} صف غير مكتمل).`;
+  } catch (err) {
+    $("importStatus").textContent = `تعذر التحديث من الرابط: ${err.message}`;
+  }
+}
+
+$("mainNav").addEventListener("click", e => {
+  const btn = e.target.closest(".tab");
+  if (btn) openTab(btn.dataset.tab);
+});
+
+document.addEventListener("click", e => {
+  const row = e.target.closest("[data-ticker]");
+  if (row) goToWhales(row.dataset.ticker);
+
+  const whaleRow = e.target.closest("[data-whale-idx]");
+  if (whaleRow) {
+    selectedWhalePeriodIdx = Number(whaleRow.dataset.whaleIdx) || 0;
+    renderWhales();
+  }
+
+  const del = e.target.closest(".del-watch");
+  if (del) {
+    const w = getWatch();
+    w.splice(Number(del.dataset.idx), 1);
+    localStorage.setItem(WATCH_KEY, JSON.stringify(w));
+    renderWatch();
+  }
+});
+
+$("searchStock").addEventListener("input", refresh);
+$("sortMarket").addEventListener("change", refresh);
+$("analysisTicker").addEventListener("change", renderAnalysis);
+$("whaleTicker").addEventListener("change", () => { selectedWhalePeriodIdx = 0; renderWhales(); });
+$("whaleSensitivity").addEventListener("change", () => { selectedWhalePeriodIdx = 0; renderWhales(); });
+$("importBtn").addEventListener("click", importFiles);
+$("syncJsonBtn").addEventListener("click", syncFromJsonUrl);
+
+$("backupBtn").addEventListener("click", () => {
+  const blob = new Blob([JSON.stringify({ version: 2, exportedAt: new Date().toISOString(), records, watch: getWatch() }, null, 2)], { type: "application/json" });
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = `bourse-radar-backup-${new Date().toISOString().slice(0, 10)}.json`;
+  a.click();
+});
+
+$("restoreFile").addEventListener("change", async e => {
+  const file = e.target.files?.[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const list = Array.isArray(data) ? data : data.records;
+    if (!Array.isArray(list)) throw new Error("صيغة ملف غير صالحة");
+    records = [];
+    const stats = mergeRecords(list);
+    if (Array.isArray(data.watch)) localStorage.setItem(WATCH_KEY, JSON.stringify(data.watch));
+    renderWatch();
+    $("importStatus").textContent = `تمت استعادة ${stats.added} سجل بنجاح.`;
+  } catch (err) {
+    $("importStatus").textContent = `فشل استعادة النسخة الاحتياطية: ${err.message}`;
+  }
+});
+
+$("clearBtn").addEventListener("click", () => {
+  if (!confirm("هل أنت متأكد من مسح جميع البيانات المحلية؟")) return;
+  records = [];
+  saveRecords();
+  refresh();
+  $("importStatus").textContent = "تم مسح جميع البيانات.";
+});
+
+$("addWatch").addEventListener("click", () => {
+  const ticker = $("watchTicker").value.trim().toUpperCase();
+  if (!ticker) return;
+  const w = getWatch();
+  if (!w.some(x => x.ticker === ticker)) w.push({ ticker, note: $("watchNote").value.trim() });
+  localStorage.setItem(WATCH_KEY, JSON.stringify(w));
+  $("watchTicker").value = "";
+  $("watchNote").value = "";
+  renderWatch();
+});
+
+window.addEventListener("resize", () => {
+  renderAnalysis();
+  renderWhales();
+});
+
+loadRecords();
+refresh();
+</script>
+</body>
+</html>
