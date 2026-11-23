@@ -5,7 +5,6 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101a2b">
 <title>BOURSE RADAR MAROC</title>
-<link rel="manifest" href="manifest.webmanifest">
 
 <style>
 :root{
@@ -17,76 +16,67 @@
 --green:#20c997;
 --red:#ff647c;
 --gold:#f5bd4f;
+--blue:#65a8ff;
 }
-
 *{box-sizing:border-box}
-
 body{
 margin:0;
 background:linear-gradient(140deg,#0b1220,#101c30);
 color:var(--txt);
 font-family:Tahoma,Arial,sans-serif;
 }
-
 header{
-padding:22px 5%;
+padding:20px 5%;
 border-bottom:1px solid var(--line);
 display:flex;
 justify-content:space-between;
 flex-wrap:wrap;
-gap:12px;
+gap:10px;
 }
-
 .brand{font-size:22px;font-weight:bold}
 .brand span{color:var(--green)}
 .sub{color:var(--muted);font-size:12px;margin-top:6px}
-
-main{max-width:1100px;margin:auto;padding:22px 5%}
-
+main{max-width:1100px;margin:auto;padding:20px 5%}
 h2{font-size:18px}
-
+h3{font-size:15px}
 .grid{
 display:grid;
 grid-template-columns:repeat(2,1fr);
-gap:12px;
+gap:10px;
 }
-
 .card{
 background:var(--panel);
 border:1px solid var(--line);
 border-radius:14px;
-padding:16px;
+padding:15px;
 margin-bottom:12px;
 }
-
 .label{color:var(--muted);font-size:12px}
-.value{font-size:24px;font-weight:bold;margin:10px 0}
+.value{font-size:23px;font-weight:bold;margin:10px 0}
 .up{color:var(--green)}
 .down{color:var(--red)}
 .gold{color:var(--gold)}
-.muted{color:var(--muted);font-size:12px}
-
+.blue{color:var(--blue)}
+.muted{color:var(--muted);font-size:12px;line-height:1.8}
 nav{
 display:flex;
 gap:7px;
 flex-wrap:wrap;
-margin:22px 0;
+margin:20px 0;
 }
-
 button{
 background:#17263b;
 color:white;
 border:1px solid var(--line);
-padding:11px 14px;
+padding:11px 13px;
 border-radius:9px;
 cursor:pointer;
+font-family:Tahoma;
 }
-
 button.active{
 background:#1b3855;
-border-color:#65a8ff;
+border-color:var(--blue);
 }
-
 input,textarea{
 background:#0b1220;
 color:white;
@@ -94,12 +84,10 @@ border:1px solid var(--line);
 padding:12px;
 border-radius:8px;
 width:100%;
-margin:6px 0;
+margin:6px 0 12px;
 font-family:Tahoma;
 }
-
 textarea{min-height:65px}
-
 .stock{
 background:#17263b;
 padding:13px;
@@ -107,25 +95,8 @@ border-radius:10px;
 margin-top:10px;
 border:1px solid var(--line);
 }
-
 .stock strong{color:var(--green);font-size:18px}
-
-.delete{
-background:#482532;
-margin-top:8px;
-}
-
-.notice{
-background:#2b2518;
-border:1px solid #6b552b;
-color:#f4d58e;
-padding:13px;
-border-radius:10px;
-font-size:12px;
-line-height:1.8;
-margin-top:20px;
-}
-
+.delete{background:#482532;margin-top:8px}
 .meter{
 height:10px;
 background:#29384c;
@@ -133,19 +104,52 @@ border-radius:20px;
 overflow:hidden;
 margin:12px 0;
 }
-
 .meter div{
 height:100%;
 background:var(--green);
 }
-
+table{
+width:100%;
+border-collapse:collapse;
+font-size:12px;
+}
+td,th{
+padding:10px 5px;
+border-bottom:1px solid var(--line);
+text-align:center;
+}
+th{color:var(--muted)}
+.notice{
+background:#2b2518;
+border:1px solid #6b552b;
+color:#f4d58e;
+padding:13px;
+border-radius:10px;
+font-size:12px;
+line-height:1.9;
+margin-top:18px;
+}
+.badge{
+display:inline-block;
+padding:5px 9px;
+border-radius:7px;
+font-size:11px;
+background:#26374e;
+margin:3px;
+}
+canvas{
+width:100%;
+height:190px;
+display:block;
+}
 footer{
 text-align:center;
 padding:25px;
 color:var(--muted);
 font-size:11px;
 }
-
+section{display:none}
+section.active{display:block}
 @media(max-width:450px){
 .value{font-size:20px}
 }
@@ -157,106 +161,190 @@ font-size:11px;
 <header>
 <div>
 <div class="brand">BOURSE <span>RADAR</span> MAROC</div>
-<div class="sub">رادار بورصة الدار البيضاء</div>
+<div class="sub">رادار بورصة الدار البيضاء · النسخة التجريبية</div>
 </div>
-<div class="muted">● النسخة التجريبية</div>
+<div class="muted">● نظام التحليل التجريبي</div>
 </header>
 
 <main>
 
-<h2>نظرة عامة على السوق</h2>
-<p class="muted">لوحة مراقبة التداول والتحليل التقني</p>
+<h2>لوحة مراقبة السوق</h2>
+<p class="muted">تحليل الأسهم والسيولة والمؤشرات التقنية</p>
 
 <div class="grid">
-
 <div class="card">
 <div class="label">مؤشر MASI</div>
 <div class="value">--</div>
-<div class="muted">بانتظار ربط البيانات</div>
+<div class="muted">بانتظار مصدر بيانات السوق</div>
 </div>
 
 <div class="card">
 <div class="label">قيمة التداول</div>
 <div class="value">--</div>
-<div class="muted">MAD</div>
+<div class="muted">MAD · بيانات السوق غير متصلة</div>
 </div>
 
 <div class="card">
-<div class="label">ضغط الشراء</div>
-<div class="value up">--</div>
-<div class="muted">بانتظار بيانات الصفقات</div>
+<div class="label">السهم محل التحليل</div>
+<div class="value">ADI</div>
+<div class="muted">ALLIANCES</div>
 </div>
 
 <div class="card">
 <div class="label">الأسهم في قائمتي</div>
 <div class="value" id="stockCount">0</div>
-<div class="muted">أسهم محفوظة</div>
+<div class="muted">أسهم محفوظة على جهازك</div>
 </div>
-
 </div>
 
 <nav>
 <button class="active" onclick="showTab('market',this)">السوق</button>
+<button onclick="showTab('analysis',this)">تحليل ADI</button>
 <button onclick="showTab('radar',this)">رادار السيولة</button>
 <button onclick="showTab('watch',this)">قائمتي</button>
 <button onclick="showTab('alerts',this)">التنبيهات</button>
 </nav>
 
 <!-- السوق -->
-
-<section id="market">
+<section id="market" class="active">
 
 <h2>مراقبة السوق</h2>
 
 <div class="card">
-<p>مرحباً بك في BOURSE RADAR MAROC.</p>
+<h3>مرحباً بك في BOURSE RADAR MAROC</h3>
 <p class="muted">
-سيتم عرض أسعار الأسهم الحقيقية بعد ربط التطبيق بمصدر البيانات.
+هذا التطبيق مخصص لمراقبة الأسهم المدرجة في بورصة الدار البيضاء،
+وتحليل الأسعار وحجم التداول والمؤشرات التقنية.
 </p>
+<p class="gold">السهم الأول المتاح للتحليل: ALLIANCES (ADI)</p>
+</div>
+
+<div class="card">
+<h3>حالة البيانات</h3>
+<div class="badge">بيانات تاريخية: ADI</div>
+<div class="badge">تحليل تقني: مفعل</div>
+<div class="badge">بيانات مباشرة: غير متصلة</div>
+<p class="muted">
+يمكنك استخدام بيانات ADI المحفوظة داخل التطبيق.
+أما بقية الأسهم فتحتاج إلى إدخال بياناتها لإجراء تحليل فعلي.
+</p>
+</div>
+
+<div class="card">
+<h3>آخر تحديث تاريخي لـ ADI</h3>
+<div class="value" id="marketPrice">--</div>
+<div class="muted" id="marketDate">--</div>
+</div>
+
+</section>
+
+<!-- تحليل ADI -->
+<section id="analysis">
+
+<h2>التحليل التقني لسهم ALLIANCES</h2>
+
+<div class="card">
+<div class="label">آخر سعر إغلاق مسجل</div>
+<div class="value" id="adiPrice">--</div>
+<div id="adiChange" class="muted">--</div>
+</div>
+
+<div class="grid">
+<div class="card">
+<div class="label">RSI - 14</div>
+<div class="value" id="adiRSI">--</div>
+<div class="muted" id="rsiSignal">--</div>
+</div>
+
+<div class="card">
+<div class="label">متوسط السعر - 5 جلسات</div>
+<div class="value" id="adiSMA5">--</div>
+<div class="muted">SMA 5</div>
+</div>
+
+<div class="card">
+<div class="label">متوسط السعر - 20 جلسة</div>
+<div class="value" id="adiSMA20">--</div>
+<div class="muted">SMA 20</div>
+</div>
+
+<div class="card">
+<div class="label">الاتجاه التقني</div>
+<div class="value gold" id="adiTrend">--</div>
+<div class="muted">حسب البيانات المتاحة</div>
+</div>
+</div>
+
+<div class="card">
+<h3>منحنى أسعار الإغلاق</h3>
+<canvas id="priceChart"></canvas>
+<p class="muted">الرسم مبني على آخر 20 جلسة متاحة.</p>
+</div>
+
+<div class="card">
+<h3>الدعم والمقاومة التقريبية</h3>
+<div class="label">أدنى إغلاق خلال الفترة</div>
+<div class="value up" id="adiSupport">--</div>
+<div class="label">أعلى إغلاق خلال الفترة</div>
+<div class="value down" id="adiResistance">--</div>
+<p class="muted">
+هذه مستويات مستخرجة من أسعار الإغلاق فقط، وليست مستويات دعم ومقاومة مؤكدة.
+</p>
+</div>
+
+<div class="card">
+<h3>ملخص التحليل</h3>
+<p id="adiSummary" class="muted">--</p>
 </div>
 
 </section>
 
 <!-- رادار السيولة -->
+<section id="radar">
 
-<section id="radar" style="display:none">
-
-<h2>رادار السيولة والصفقات الكبيرة</h2>
+<h2>رادار السيولة وحجم التداول</h2>
 
 <div class="card">
-
-<div class="label">ضغط الشراء</div>
-<div class="value up">بانتظار البيانات</div>
-
-<div class="meter"><div style="width:0%"></div></div>
-
-<div class="label">ضغط البيع</div>
-<div class="value down">بانتظار البيانات</div>
-
-<p class="muted">
-سيتم احتساب ضغط الشراء والبيع عند ربط التطبيق ببيانات الصفقات.
-</p>
-
+<div class="label">حجم تداول آخر جلسة</div>
+<div class="value" id="lastVolume">--</div>
+<div class="muted">MAD</div>
 </div>
 
 <div class="card">
-<h3>نشاط الحجم</h3>
-<p>مقارنة حجم التداول بالمتوسط التاريخي.</p>
-<p class="gold">بانتظار البيانات</p>
+<div class="label">متوسط حجم التداول</div>
+<div class="value" id="averageVolume">--</div>
+<div class="muted">MAD · آخر 20 جلسة</div>
+</div>
+
+<div class="card">
+<div class="label">نسبة الحجم مقارنة بالمتوسط</div>
+<div class="value gold" id="volumeRatio">--</div>
+<div class="meter"><div id="volumeMeter" style="width:0%"></div></div>
+<p id="volumeSignal" class="muted">--</p>
+</div>
+
+<div class="card">
+<h3>قوة الشراء والبيع</h3>
+<p class="gold">غير متاحة حالياً</p>
+<p class="muted">
+حجم التداول وحده لا يكشف هل المشترون هم الأقوى أم البائعون.
+نحتاج إلى بيانات الصفقات واتجاه تنفيذها أو دفتر الأوامر.
+</p>
+</div>
+
+<div class="card">
+<h3>أهم جلسات التداول</h3>
+<div id="volumeTable"></div>
 </div>
 
 </section>
 
-<!-- قائمة الأسهم -->
-
-<section id="watch" style="display:none">
+<!-- قائمتي -->
+<section id="watch">
 
 <h2>قائمتي لمتابعة الأسهم</h2>
 
 <div class="card">
-
-<p class="muted">أضف الأسهم التي تريد مراقبتها.</p>
-
 <label>رمز السهم</label>
 <input id="ticker" placeholder="مثلاً ADI أو DHO أو RDS">
 
@@ -264,72 +352,372 @@ font-size:11px;
 <textarea id="stockNote" placeholder="سعر الشراء، هدف البيع، الدعم، المقاومة..."></textarea>
 
 <button onclick="addStock()">+ إضافة السهم</button>
-
 </div>
 
 <div class="card">
-
-<h2>الأسهم التي أراقبها</h2>
-
+<h3>الأسهم التي أراقبها</h3>
 <div id="mylist"></div>
-
 </div>
 
 </section>
 
 <!-- التنبيهات -->
-
-<section id="alerts" style="display:none">
+<section id="alerts">
 
 <h2>مركز التنبيهات</h2>
 
 <div class="card">
-<p>لا توجد تنبيهات جديدة.</p>
-<p class="muted">
-سيتم تفعيل التنبيهات الحقيقية بعد ربط التطبيق ببيانات السوق.
-</p>
+<h3>تنبيهات سهم ADI</h3>
+<div id="alertList"></div>
+</div>
+
+<div class="card">
+<h3>إعدادات التنبيه</h3>
+<label>تنبيه عند تجاوز السعر (MAD)</label>
+<input type="number" id="priceAlert" placeholder="مثلاً 380">
+
+<label>تنبيه عند انخفاض السعر (MAD)</label>
+<input type="number" id="lowAlert" placeholder="مثلاً 350">
+
+<button onclick="saveAlerts()">حفظ إعدادات التنبيه</button>
+<p class="muted" id="alertSaved"></p>
 </div>
 
 </section>
 
 <div class="notice">
-<strong>تنبيه:</strong>
-التطبيق حالياً نموذج تجريبي. لا يعرض أسعاراً حقيقية ولا يصدر توصيات شراء أو بيع فعلية.
+<strong>مهم جداً:</strong><br>
+1. التطبيق يستخدم بيانات تاريخية أرسلتها أنت لسهم ADI.<br>
+2. لا يتصل حالياً ببورصة الدار البيضاء ولا يعرض أسعاراً مباشرة.<br>
+3. مؤشرات التحليل أدوات مساعدة وليست توصيات شراء أو بيع.<br>
+4. لا يمكن تحديد ضغط الشراء والبيع الحقيقي من حجم التداول اليومي وحده.
 </div>
 
 </main>
 
 <footer>
-BOURSE RADAR MAROC · مشروعك لمراقبة بورصة الدار البيضاء
+BOURSE RADAR MAROC · مشروع شخصي لمراقبة بورصة الدار البيضاء
 </footer>
 
 <script>
 
-// قراءة الأسهم المحفوظة
-let stocks=JSON.parse(localStorage.getItem('myStocks')||'[]');
+// ==================================
+// بيانات سهم ADI التاريخية
+// ==================================
 
-// التنقل بين الأقسام
-function showTab(id,btn){
+const adiData = [
+{date:"2026-11-20",open:365.45,close:357.90,high:365.45,low:355.00,volume:2781328.25,shares:7765,trades:100},
+{date:"2026-11-19",close:362.00,volume:1672163.95},
+{date:"2026-11-17",close:365.00,volume:2093745.15},
+{date:"2026-11-16",close:374.85,volume:1011385.90},
+{date:"2026-11-13",close:376.00,volume:3411933.95},
+{date:"2026-11-12",close:379.00,volume:293443.10},
+{date:"2026-11-11",close:381.60,volume:28367247.05,shares:75212,trades:188},
+{date:"2026-11-10",close:388.00,volume:9310058.30},
+{date:"2026-11-09",close:383.50,volume:11242022.75},
+{date:"2026-11-05",close:371.20,volume:14337709.60},
+{date:"2026-11-04",close:360.00,volume:9309892.35},
+{date:"2026-11-03",close:350.00,volume:1326579.65},
+{date:"2026-11-02",close:344.50,volume:352721.25},
+{date:"2026-10-30",close:340.90,volume:1167952.90},
+{date:"2026-10-29",close:349.90,volume:5083886.10},
+{date:"2026-10-28",close:359.45,volume:1899625.60},
+{date:"2026-10-27",close:360.50,volume:2047732.05},
+{date:"2026-10-26",close:364.90,volume:982863.10},
+{date:"2026-10-23",close:368.00,volume:5626026.95},
+{date:"2026-10-22",close:369.00,volume:1028884.80}
+];
 
-document.querySelectorAll('main section').forEach(s=>{
-s.style.display='none';
-});
+// ترتيب البيانات من الأقدم إلى الأحدث للحسابات
+const data = [...adiData].reverse();
 
-document.getElementById(id).style.display='block';
+function money(n){
+return Number(n).toLocaleString('fr-MA',{
+minimumFractionDigits:2,
+maximumFractionDigits:2
+})+' MAD';
+}
 
-document.querySelectorAll('nav button').forEach(b=>{
-b.classList.remove('active');
-});
+function price(n){
+return Number(n).toFixed(2)+' MAD';
+}
 
-btn.classList.add('active');
+// ==================================
+// حساب المؤشرات التقنية
+// ==================================
+
+function average(values){
+return values.reduce((a,b)=>a+b,0)/values.length;
+}
+
+function calculateRSI(values,period=14){
+if(values.length<=period)return null;
+
+let gains=0,losses=0;
+
+for(let i=values.length-period;i<values.length;i++){
+let change=values[i]-values[i-1];
+
+if(change>0)gains+=change;
+else losses+=Math.abs(change);
+}
+
+let avgGain=gains/period;
+let avgLoss=losses/period;
+
+if(avgLoss===0)return 100;
+
+let rs=avgGain/avgLoss;
+return 100-(100/(1+rs));
+}
+
+// ==================================
+// تحليل السهم
+// ==================================
+
+function analyzeADI(){
+
+const last=data[data.length-1];
+const previous=data[data.length-2];
+
+const prices=data.map(x=>x.close);
+const volumes=data.map(x=>x.volume);
+
+const sma5=average(prices.slice(-5));
+const sma20=average(prices);
+
+const rsi=calculateRSI(prices);
+
+const avgVolume=average(volumes);
+const lastVolume=last.volume;
+const ratio=lastVolume/avgVolume;
+
+const minPrice=Math.min(...prices);
+const maxPrice=Math.max(...prices);
+
+const change=((last.close-previous.close)/previous.close)*100;
+
+document.getElementById('adiPrice').textContent=price(last.close);
+document.getElementById('marketPrice').textContent=price(last.close);
+document.getElementById('marketDate').textContent='تاريخ الجلسة: '+last.date;
+
+document.getElementById('adiChange').textContent=
+'التغير عن الجلسة السابقة: '+change.toFixed(2)+'%';
+
+document.getElementById('adiChange').className=
+change>=0?'up':'down';
+
+document.getElementById('adiSMA5').textContent=price(sma5);
+document.getElementById('adiSMA20').textContent=price(sma20);
+
+document.getElementById('adiSupport').textContent=price(minPrice);
+document.getElementById('adiResistance').textContent=price(maxPrice);
+
+if(rsi!==null){
+
+document.getElementById('adiRSI').textContent=rsi.toFixed(2);
+
+let signal='منطقة محايدة';
+
+if(rsi<30)signal='تشبع بيعي محتمل';
+else if(rsi>70)signal='تشبع شرائي محتمل';
+
+document.getElementById('rsiSignal').textContent=signal;
+
+}else{
+document.getElementById('adiRSI').textContent='غير متاح';
+}
+
+let trend='اتجاه مختلط';
+
+if(last.close>sma20 && sma5>sma20)trend='اتجاه صاعد';
+else if(last.close<sma20 && sma5<sma20)trend='اتجاه هابط';
+
+document.getElementById('adiTrend').textContent=trend;
+
+let summary='';
+
+if(change<0){
+summary+='السهم سجل تراجعاً في آخر جلسة. ';
+}else{
+summary+='السهم سجل ارتفاعاً في آخر جلسة. ';
+}
+
+summary+='السعر الحالي أقل من متوسط 20 جلسة: '+
+(last.close<sma20?'نعم. ':'لا. ');
+
+summary+='متوسط الحجم هو '+money(avgVolume)+
+'، وحجم آخر جلسة يمثل '+(ratio*100).toFixed(1)+'% منه.';
+
+document.getElementById('adiSummary').textContent=summary;
+
+document.getElementById('adiRSI').className=
+rsi===null?'value':rsi<30?'value up':rsi>70?'value down':'value gold';
+
+document.getElementById('adiTrend').className=
+trend==='اتجاه صاعد'?'value up':
+trend==='اتجاه هابط'?'value down':'value gold';
+
+document.getElementById('marketDate').textContent=
+'آخر جلسة مسجلة: '+last.date;
+
+document.getElementById('lastVolume').textContent=money(lastVolume);
+document.getElementById('averageVolume').textContent=money(avgVolume);
+document.getElementById('volumeRatio').textContent=
+(ratio*100).toFixed(1)+'% من المتوسط';
+
+document.getElementById('volumeMeter').style.width=
+Math.min(ratio*50,100)+'%';
+
+let volumeText='حجم تداول عادي مقارنة بالمتوسط.';
+
+if(ratio>1.5)volumeText='نشاط تداول مرتفع مقارنة بالمتوسط.';
+if(ratio<0.5)volumeText='نشاط تداول ضعيف مقارنة بالمتوسط.';
+
+document.getElementById('volumeSignal').textContent=volumeText;
+
+drawChart(prices);
+createVolumeTable();
+createAlerts(last,rsi,ratio);
 
 }
 
-// إضافة سهم
+// ==================================
+// الرسم البياني
+// ==================================
+
+function drawChart(prices){
+
+const canvas=document.getElementById('priceChart');
+const ctx=canvas.getContext('2d');
+
+const width=canvas.clientWidth;
+const height=190;
+
+const ratio=window.devicePixelRatio||1;
+
+canvas.width=width*ratio;
+canvas.height=height*ratio;
+
+ctx.scale(ratio,ratio);
+
+const min=Math.min(...prices)-5;
+const max=Math.max(...prices)+5;
+
+ctx.clearRect(0,0,width,height);
+
+ctx.beginPath();
+
+prices.forEach((p,i)=>{
+
+const x=10+i*(width-20)/(prices.length-1);
+const y=height-15-((p-min)/(max-min))*(height-30);
+
+if(i===0)ctx.moveTo(x,y);
+else ctx.lineTo(x,y);
+
+});
+
+ctx.strokeStyle='#20c997';
+ctx.lineWidth=2;
+ctx.stroke();
+
+ctx.lineTo(width-10,height-15);
+ctx.lineTo(10,height-15);
+ctx.closePath();
+
+ctx.fillStyle='rgba(32,201,151,0.10)';
+ctx.fill();
+
+}
+
+// ==================================
+// جدول حجم التداول
+// ==================================
+
+function createVolumeTable(){
+
+let sorted=[...adiData].sort((a,b)=>b.volume-a.volume).slice(0,5);
+
+let html='<table><tr><th>التاريخ</th><th>الحجم MAD</th><th>الإغلاق</th></tr>';
+
+sorted.forEach(x=>{
+html+='<tr><td>'+x.date+'</td><td>'+
+money(x.volume)+'</td><td>'+price(x.close)+'</td></tr>';
+});
+
+html+='</table>';
+
+document.getElementById('volumeTable').innerHTML=html;
+
+}
+
+// ==================================
+// التنبيهات
+// ==================================
+
+function createAlerts(last,rsi,ratio){
+
+let alerts=[];
+
+if(rsi!==null && rsi<30){
+alerts.push('RSI يشير إلى تشبع بيعي محتمل.');
+}
+
+if(rsi!==null && rsi>70){
+alerts.push('RSI يشير إلى تشبع شرائي محتمل.');
+}
+
+if(ratio>1.5){
+alerts.push('ارتفاع حجم التداول مقارنة بالمتوسط.');
+}
+
+if(last.close<data[data.length-2].close){
+alerts.push('السعر تراجع في آخر جلسة.');
+}
+
+if(alerts.length===0){
+alerts.push('لا توجد إشارة فنية واضحة حالياً.');
+}
+
+const savedHigh=Number(localStorage.getItem('adiHighAlert')||0);
+const savedLow=Number(localStorage.getItem('adiLowAlert')||0);
+
+if(savedHigh && last.close>=savedHigh){
+alerts.push('السعر بلغ مستوى التنبيه العلوي الذي حددته.');
+}
+
+if(savedLow && last.close<=savedLow){
+alerts.push('السعر بلغ مستوى التنبيه السفلي الذي حددته.');
+}
+
+document.getElementById('alertList').innerHTML=
+alerts.map(x=>'<p class="muted">● '+x+'</p>').join('');
+
+}
+
+function saveAlerts(){
+
+const high=Number(document.getElementById('priceAlert').value);
+const low=Number(document.getElementById('lowAlert').value);
+
+localStorage.setItem('adiHighAlert',high||0);
+localStorage.setItem('adiLowAlert',low||0);
+
+document.getElementById('alertSaved').textContent=
+'تم حفظ إعدادات التنبيه على جهازك.';
+
+}
+
+// ==================================
+// إدارة الأسهم
+// ==================================
+
+let stocks=JSON.parse(localStorage.getItem('myStocks')||'[]');
+
 function addStock(){
 
 let ticker=document.getElementById('ticker').value.trim().toUpperCase();
-
 let note=document.getElementById('stockNote').value.trim();
 
 if(!ticker){
@@ -342,53 +730,39 @@ alert('هذا السهم موجود بالفعل');
 return;
 }
 
-stocks.push({
-ticker:ticker,
-note:note
-});
+stocks.push({ticker,note});
 
 saveStocks();
 
 document.getElementById('ticker').value='';
 document.getElementById('stockNote').value='';
 
-alert('تمت إضافة السهم بنجاح');
-
 }
 
-// حذف سهم
 function deleteStock(index){
 
 if(confirm('هل تريد حذف هذا السهم؟')){
-
 stocks.splice(index,1);
-
 saveStocks();
-
 }
 
 }
 
-// حفظ الأسهم
 function saveStocks(){
 
 localStorage.setItem('myStocks',JSON.stringify(stocks));
-
 displayStocks();
 
 }
 
-// عرض الأسهم
 function displayStocks(){
 
 let list=document.getElementById('mylist');
-
 list.innerHTML='';
 
 stocks.forEach((stock,index)=>{
 
 let div=document.createElement('div');
-
 div.className='stock';
 
 let title=document.createElement('strong');
@@ -396,13 +770,11 @@ title.textContent=stock.ticker;
 
 let note=document.createElement('p');
 note.textContent=stock.note||'لا توجد ملاحظات';
-
 note.className='muted';
 
 let btn=document.createElement('button');
 btn.textContent='حذف السهم';
 btn.className='delete';
-
 btn.onclick=()=>deleteStock(index);
 
 div.appendChild(title);
@@ -417,19 +789,42 @@ document.getElementById('stockCount').textContent=stocks.length;
 
 }
 
-// تحميل القائمة عند فتح التطبيق
-displayStocks();
+// ==================================
+// التنقل بين الصفحات
+// ==================================
 
-// تشغيل Service Worker
-if('serviceWorker' in navigator &&
-location.protocol.startsWith('http')){
+function showTab(id,btn){
 
-navigator.serviceWorker.register('./sw.js')
-.catch(error=>console.log(error));
+document.querySelectorAll('main section').forEach(s=>{
+s.classList.remove('active');
+});
+
+document.getElementById(id).classList.add('active');
+
+document.querySelectorAll('nav button').forEach(b=>{
+b.classList.remove('active');
+});
+
+btn.classList.add('active');
+
+if(id==='analysis'){
+setTimeout(()=>drawChart(data.map(x=>x.close)),50);
+}
 
 }
 
-</script> src="./adi-data.js"></script>
+// ==================================
+// تشغيل التطبيق
+// ==================================
+
+displayStocks();
+analyzeADI();
+
+window.addEventListener('resize',()=>{
+drawChart(data.map(x=>x.close));
+});
+
+</script>
 
 </body>
 </html>
