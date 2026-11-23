@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>اختبار ربط بورصة الدار البيضاء</title>
+<style>
+:root{color-scheme:dark}
+body{margin:0;background:#0b1220;color:#e8eef8;font-family:system-ui,Arial,sans-serif;padding:22px}
+main{max-width:760px;margin:25px auto;background:#121d30;border:1px solid #293951;border-radius:18px;padding:22px}
+h1{font-size:23px;margin-top:0;color:#6ee7c2}
+p{line-height:1.8;color:#c3cee0}
+button,a{display:inline-block;border:0;border-radius:10px;padding:12px 17px;margin:7px 4px;text-decoration:none;font-weight:700;cursor:pointer}
+button{background:#16a085;color:#071b18}
+a{background:#263852;color:#fff}
+#status{padding:15px;border-radius:12px;background:#1c2b42;margin:18px 0;line-height:1.8;white-space:pre-wrap}
+#details{font-size:14px;color:#b8c7dc;overflow-wrap:anywhere}
+.ok{border-right:5px solid #2dd4a7}
+.bad{border-right:5px solid #fb7185}
+.warn{border-right:5px solid #fbbf24}
+small{color:#91a4bd}
+</style>
+</head>
+<body>
+<main>
+<h1>📡 اختبار الاتصال ببورصة الدار البيضاء</h1>
+<p>هذه صفحة اختبار مستقلة. تحاول قراءة صفحة السوق الرسمية مباشرة من المتصفح، دون وسيط أو اشتراك أو تجاوز للحماية. لن تغيّر تطبيق BOURSE RADAR MAROC أو بياناته.</p>
+<button id="test">اختبر الاتصال الآن</button>
+<a href="https://www.casablanca-bourse.com/ar/live-market/overview" target="_blank" rel="noopener">فتح السوق الرسمي</a>
+<div id="status" class="warn">لم يبدأ الاختبار بعد.</div>
+<div id="details"></div>
+<p><small>تنبيه: نجاح قراءة الصفحة لا يعني تلقائياً وجود API رسمي أو ترخيص لإعادة توزيع البيانات. أسعار الأسهم المنشورة على موقع البورصة متأخرة 15 دقيقة، وفق شروط الموقع.</small></p>
+</main>
+<script>
+const endpoint = "https://www.casablanca-bourse.com/ar/live-market/overview";
+const statusBox = document.getElementById("status");
+const details = document.getElementById("details");
+const button = document.getElementById("test");
+
+button.addEventListener("click", runTest);
+
+async function runTest(){
+  button.disabled = true;
+  button.textContent = "جارٍ الاختبار…";
+  statusBox.className = "warn";
+  statusBox.textContent = "نحاول الاتصال بالموقع الرسمي…";
+  details.textContent = "";
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), 15000);
+  try {
+    const response = await fetch(endpoint, {
+      method: "GET",
+      mode: "cors",
+      credentials: "omit",
+      cache: "no-store",
+      signal: controller.signal,
+      headers: {"Accept":"text/html"}
+    });
+    if (!response.ok) throw new Error("استجاب الموقع برمز HTTP " + response.status);
+    const html = await response.text();
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    const text = (doc.body?.innerText || doc.documentElement?.textContent || "").replace(/\s+/g," ").trim();
+    const markers = ["السوق المباشر","آخر المعاملات","LIVE MARKET","Recent Transactions","ADI","MASI"];
+    const found = markers.filter(x => text.toUpperCase().includes(x.toUpperCase()));
+    if (text.length < 100) throw new Error("وصل رد قصير جداً ولا يحتوي على بيانات سوق قابلة للقراءة.");
+    statusBox.className = "ok";
+    statusBox.textContent = "نجح الاتصال من المتصفح.\nحالة HTTP: " + response.status + "\nحجم النص المستخرج: " + text.length + " حرف.\nعلامات السوق التي عُثر عليها: " + (found.join("، ") || "لم تُعثر على علامات معروفة");
+    details.textContent = "مقتطف من الصفحة المستلمة:\n" + text.slice(0,1200);
+  } catch (e) {
+    statusBox.className = "bad";
+    let reason = e.name === "AbortError" ? "انتهت مهلة الاتصال بعد 15 ثانية." :
+      (e instanceof TypeError ? "رفض المتصفح قراءة الصفحة من نطاق مختلف (غالباً سياسة CORS)، أو تعذر الوصول إلى الموقع." : e.message);
+    statusBox.textContent = "لم ينجح جلب الصفحة مباشرة من المتصفح.\nالسبب المحتمل: " + reason +
+      "\n\nهذا لا يعني أن موقع البورصة متوقف؛ قد تكون الصفحة متاحة للزوار ولكنها لا تسمح لتطبيق مستضاف على GitHub بقراءتها آلياً.";
+    details.textContent = "الخطوة التالية إذا ظهر هذا الخطأ: نحتاج إلى مصدر/API مصرح به أو وسيط خادمي مسموح. لن نستخدم بروكسيات مجهولة أو نتجاوز حماية الموقع.";
+  } finally {
+    clearTimeout(timer);
+    button.disabled = false;
+    button.textContent = "أعد الاختبار";
+  }
+}
+</script>
+</body>
+</html>
