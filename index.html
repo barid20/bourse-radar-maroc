@@ -60,7 +60,26 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
   </div></div>
   <div class="card section"><b>حجم التداول عبر الفترات — مثال</b><div class="chart"><i class="bar" style="height:35%"></i><i class="bar" style="height:48%"></i><i class="bar" style="height:42%"></i><i class="bar" style="height:68%"></i><i class="bar" style="height:55%"></i><i class="bar" style="height:92%"></i><i class="bar" style="height:73%"></i><i class="bar" style="height:100%"></i><i class="bar" style="height:64%"></i><i class="bar" style="height:82%"></i></div></div>
  </section>
- <section id="watch" style="display:none"><div class="section"><h2>قائمتي لمتابعة الأسهم</h2><div class="card"><p>أضف رموز الأسهم التي تريد مراقبتها في النسخة المتصلة بالبيانات.</p><p class="muted">سيتم حفظ الملاحظات والإشارات محلياً أو في قاعدة بيانات حسب طريقة النشر.</p><input id="ticker" placeholder="مثلاً: ADI" style="background:#0b1220;color:white;border:1px solid var(--line);padding:11px;border-radius:8px;width:150px"><button onclick="addStock()">إضافة سهم</button><ul id="mylist"></ul></div></div></section>
+ <section id=" <section id="watch" style="display:none">
+ <div class="section">
+  <h2>قائمتي لمتابعة الأسهم</h2>
+
+  <div class="card">
+   <input id="ticker" placeholder="رمز السهم مثال ADI"
+    style="background:#0b1220;color:white;border:1px solid #26374e;padding:11px;border-radius:8px;width:150px">
+
+   <input id="stockNote" placeholder="ملاحظتك حول السهم"
+    style="background:#0b1220;color:white;border:1px solid #26374e;padding:11px;border-radius:8px;margin:5px">
+
+   <button onclick="addStock()">+ إضافة السهم</button>
+  </div>
+
+  <div class="card section">
+   <h2>الأسهم التي أراقبها</h2>
+   <div id="mylist"></div>
+  </div>
+ </div>
+</section> " style="display:none"><div class="section"><h2>قائمتي لمتابعة الأسهم</h2><div class="card"><p>أضف رموز الأسهم التي تريد مراقبتها في النسخة المتصلة بالبيانات.</p><p class="muted">سيتم حفظ الملاحظات والإشارات محلياً أو في قاعدة بيانات حسب طريقة النشر.</p><input id="ticker" placeholder="مثلاً: ADI" style="background:#0b1220;color:white;border:1px solid var(--line);padding:11px;border-radius:8px;width:150px"><button onclick="addStock()">إضافة سهم</button><ul id="mylist"></ul></div></div></section>
  <section id="alerts" style="display:none"><div class="section"><h2>مركز التنبيهات</h2><div class="card"><p><span class="pill buy">شراء محتمل</span> ATW — ضغط شراء مرتفع (مثال توضيحي)</p><p><span class="pill sell">بيع / حذر</span> IAM — ارتفاع ضغط البيع (مثال توضيحي)</p><p class="muted">الإشعارات الحقيقية تحتاج ربط التطبيق بمصدر بيانات موثوق وتشغيل خدمة تنبيهات.</p></div></div></section>
  <div class="notice"><b>تنبيه مهم:</b> كل الأرقام والإشارات الظاهرة في هذه النسخة افتراضية لا تمثل السوق الحقيقي ولا تصلح لاتخاذ قرار استثماري. لن نعرض إشارات حقيقية حتى نربط التطبيق بمصدر بيانات مرخّص ونتحقق من دقته.</div>
 </main>
@@ -69,5 +88,5 @@ footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
 function showTab(id,btn){document.querySelectorAll('main section').forEach(s=>s.style.display='none');document.getElementById(id).style.display='block';document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
 function addStock(){let v=document.getElementById('ticker').value.trim().toUpperCase();if(!v)return;let li=document.createElement('li');li.textContent=v+' — مضاف للمراقبة';document.getElementById('mylist').appendChild(li);document.getElementById('ticker').value=''}
 if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js');
-</script>
+</script>list.innerHTML
 </body></html>
