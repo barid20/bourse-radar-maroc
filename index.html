@@ -1,160 +1,457 @@
 <!doctype html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#071b2c">
 <title>BOURSE RADAR MAROC</title>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#071522;--panel:#102638;--panel2:#163247;--text:#eef6fb;--muted:#9bb1c1;--green:#20c997;--red:#ff6b6b;--gold:#ffc857;--line:#28475d}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(150deg,#061421,#0c2638);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
-header{padding:18px 14px;background:#081c2c;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}.wrap{max-width:1180px;margin:auto;padding:14px}
-h1{font-size:21px;margin:0 0 5px}header p,.muted{color:var(--muted);font-size:13px;margin:0}.badge{display:inline-block;background:#173c4c;color:#70e2c0;border-radius:20px;padding:5px 10px;font-size:12px;margin-top:8px}
-.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
-.label{color:var(--muted);font-size:12px}.value{font-size:21px;font-weight:750;margin-top:5px;direction:ltr;text-align:right}
-nav{display:flex;gap:7px;overflow:auto;margin:12px 0}button,.tab{border:0;border-radius:9px;padding:10px 13px;background:var(--panel2);color:var(--text);font-weight:650;cursor:pointer;white-space:nowrap}
-button.primary{background:#087f68}button.danger{background:#753c48}button:disabled{opacity:.5}.tab.active{background:#087f68}
-.section{display:none}.section.active{display:block}input,select{background:#071b2a;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px;width:100%;margin:6px 0}
+:root{--bg:#071522;--panel:#102638;--panel2:#163247;--text:#eef6fb;--muted:#9bb1c1;--green:#20c997;--red:#ff6b6b;--gold:#ffc857;--blue:#4dabf7;--line:#28475d}
+*{box-sizing:border-box}
+body{margin:0;background:linear-gradient(150deg,#061421,#0c2638);color:var(--text);font-family:system-ui,-apple-system,"Segoe UI",Arial,sans-serif}
+header{padding:18px 14px;background:#081c2c;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:5}
+.wrap{max-width:1180px;margin:auto;padding:14px}
+h1{font-size:21px;margin:0 0 5px}
+header p,.muted{color:var(--muted);font-size:13px;margin:0}
+.badge{display:inline-block;background:#173c4c;color:#70e2c0;border-radius:20px;padding:5px 10px;font-size:12px;margin-top:8px}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
+.card,.panel{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:14px}
+.label{color:var(--muted);font-size:12px}
+.value{font-size:21px;font-weight:750;margin-top:5px;direction:ltr;text-align:right}
+nav{display:flex;gap:8px;overflow-x:auto;margin:12px 0;padding-bottom:4px}
+button,.tab{border:0;border-radius:9px;padding:10px 14px;background:var(--panel2);color:var(--text);font-weight:650;cursor:pointer;white-space:nowrap;transition:background .15s}
+button:hover,.tab:hover{filter:brightness(1.1)}
+button.primary{background:#087f68}
+button.danger{background:#753c48}
+button:disabled{opacity:.5;cursor:not-allowed}
+.tab.active{background:#087f68}
+.section{display:none}.section.active{display:block}
+input,select{background:#071b2a;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px;width:100%;margin:6px 0}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.row>*{flex:1;min-width:140px}
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted)}
-.tablebox{overflow:auto;margin-top:10px}.positive{color:var(--green)}.negative{color:var(--red)}.warning{color:var(--gold)}
-.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.kpis .card{padding:11px}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:760px}
+th,td{padding:10px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th{color:var(--muted)}
+tbody tr.clickable{cursor:pointer}
+tbody tr.clickable:hover{background:rgba(255,255,255,.04)}
+tbody tr.selected-row{background:rgba(32,201,151,.12)}
+.tablebox{overflow-x:auto;margin-top:10px}
+.positive{color:var(--green)}.negative{color:var(--red)}.warning{color:var(--gold)}.info-txt{color:var(--blue)}
+.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}.kpis .card{padding:11px}
 .note{background:#352e1b;border:1px solid #68542a;padding:11px;border-radius:10px;color:#ffe3a0;font-size:13px;line-height:1.8}
 .info{background:#102d40;border:1px solid #28536a;padding:11px;border-radius:10px;color:#c8e8f5;font-size:13px;line-height:1.8}
-.stockgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}.stockcard{background:#102638;border:1px solid var(--line);border-radius:13px;padding:13px}
-.stockhead{display:flex;justify-content:space-between;gap:8px;align-items:center}.pill{border-radius:30px;padding:4px 9px;font-size:11px;background:#25465a}.meter{height:8px;background:#263d4c;border-radius:9px;overflow:hidden;margin:7px 0}.meter>i{display:block;height:100%;background:var(--green)}
-canvas{width:100%;height:230px;background:#091d2b;border-radius:10px;margin-top:12px}
-small{color:var(--muted)}footer{text-align:center;color:var(--muted);padding:25px;font-size:12px}
-@media(max-width:760px){.grid{grid-template-columns:repeat(2,1fr)}.value{font-size:18px}.kpis{grid-template-columns:repeat(2,1fr)}.stockgrid{grid-template-columns:1fr}}
-</style></head>
+.stockgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-top:12px}
+.stockcard{background:#102638;border:1px solid var(--line);border-radius:13px;padding:13px;cursor:pointer;transition:border-color .15s}
+.stockcard:hover{border-color:var(--green)}
+.stockhead{display:flex;justify-content:space-between;gap:8px;align-items:center}
+.pill{border-radius:30px;padding:4px 9px;font-size:11px;background:#25465a;display:inline-block}
+.pill.buy{background:rgba(32,201,151,.2);color:#70e2c0;border:1px solid rgba(32,201,151,.4)}
+.pill.sell{background:rgba(255,107,107,.2);color:#ff9b9b;border:1px solid rgba(255,107,107,.4)}
+.meter{height:8px;background:#263d4c;border-radius:9px;overflow:hidden;margin:7px 0}
+.meter>i{display:block;height:100%;background:var(--green)}
+canvas{width:100%;height:280px;background:#091d2b;border-radius:10px;margin-top:12px;display:block}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--muted);margin-top:8px}
+.legend span{display:inline-flex;align-items:center;gap:5px}
+.dot{width:10px;height:10px;border-radius:2px;display:inline-block}
+small{color:var(--muted)}
+footer{text-align:center;color:var(--muted);padding:25px;font-size:12px}
+@media(max-width:760px){
+  .grid{grid-template-columns:repeat(2,1fr)}
+  .value{font-size:18px}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .stockgrid{grid-template-columns:1fr}
+}
+</style>
+</head>
 <body>
-<header><div class="wrap"><h1>📡 BOURSE RADAR MAROC</h1><p>رادار بورصة الدار البيضاء · التحليل الفني ورصد السيولة التاريخية</p><span class="badge">نسخة محلية · استيراد بيانات Excel الرسمية</span></div></header>
+<header>
+  <div class="wrap">
+    <h1>📡 BOURSE RADAR MAROC</h1>
+    <p>رادار بورصة الدار البيضاء · التحليل الفني ورصد السيولة التاريخية</p>
+    <span class="badge">نسخة محلية · استيراد بيانات Excel وتحديث JSON</span>
+  </div>
+</header>
+
 <main class="wrap">
-<div class="grid">
- <div class="card"><div class="label">عدد الأسهم</div><div class="value" id="stockCount">0</div></div>
- <div class="card"><div class="label">السجلات الصالحة للتحليل</div><div class="value" id="recordCount">0</div></div>
- <div class="card"><div class="label">قيمة تداول آخر جلسة</div><div class="value" id="marketVolume">—</div></div>
- <div class="card"><div class="label">آخر تاريخ مسجل</div><div class="value" id="lastDate">—</div></div>
-</div>
-<div class="note">تنبيه مهم: التطبيق لا يتصل مباشرة ببورصة الدار البيضاء ولا يستقبل دفتر الأوامر. ضغط الشراء/البيع والتجميع/التصريف مؤشرات تقديرية محسوبة من حركة السعر والحجم، وليست بيانات فعلية لأوامر المشترين والبائعين. لا تعتبر الإشارات توصية استثمارية.</div>
-<nav>
-<button class="tab active" data-tab="market">السوق</button><button class="tab" data-tab="ranking">أفضل فرص اليوم</button><button class="tab" data-tab="analysis">التحليل</button><button class="tab" data-tab="radar">ضغط الشراء والبيع</button><button class="tab" data-tab="import">استيراد Excel</button><button class="tab" data-tab="watch">قائمتي</button>
-</nav>
-<section id="market" class="section active panel">
- <div class="row"><input id="searchStock" placeholder="ابحث برمز السهم أو اسم الشركة"><select id="sortMarket"><option value="volume">الأعلى قيمة تداول</option><option value="change">أعلى تغير يومي</option><option value="ticker">رمز السهم</option><option value="date">الأحدث تاريخاً</option></select></div>
- <div class="tablebox"><table><thead><tr><th>السهم</th><th>آخر سعر</th><th>التغير</th><th>قيمة التداول MAD</th><th>ضغط تقديري</th><th>التاريخ</th></tr></thead><tbody id="marketRows"></tbody></table></div>
- <div id="stockCards" class="stockgrid"></div>
-</section>
-<section id="ranking" class="section panel">
- <h3>ترتيب الأسهم حسب قوة الإشارة</h3><p class="muted">الترتيب مبني على الاتجاه والزخم والسيولة والضغط السعري، ولا يعني توصية شراء.</p>
- <div class="tablebox"><table><thead><tr><th>الترتيب</th><th>السهم</th><th>النقاط /100</th><th>التغير</th><th>نسبة الحجم</th><th>الضغط</th><th>الإشارة</th></tr></thead><tbody id="rankingRows"></tbody></table></div>
-</section>
-<section id="analysis" class="section panel">
- <h3>التحليل الفني المتقدم</h3><select id="analysisTicker"></select><div class="kpis" id="analysisKpis"></div><canvas id="priceChart" width="1000" height="280"></canvas>
- <div id="analysisText" class="info" style="margin-top:10px">اختر سهماً لعرض التحليل.</div>
-</section>
-<section id="radar" class="section panel">
- <h3>رادار ضغط الشراء والبيع</h3><p class="muted">تقدير مبني على مكان الإغلاق داخل نطاق الشمعة، مع مراعاة حجم التداول مقارنة بمتوسط 20 جلسة.</p>
- <div class="tablebox"><table><thead><tr><th>السهم</th><th>آخر حجم MAD</th><th>متوسط 20 جلسة</th><th>نسبة الحجم</th><th>ضغط شراء</th><th>ضغط بيع</th><th>التجميع/التصريف</th></tr></thead><tbody id="radarRows"></tbody></table></div>
-</section>
-<section id="import" class="section panel">
- <h3>استيراد ملفات بورصة الدار البيضاء</h3><p class="muted">اختر عدة ملفات Excel أو CSV، ويمكن أن يكون لكل سهم ملف مستقل. الاستيراد يحدّث السجلات المتطابقة ولا يحذف تاريخك السابق.</p>
- <input type="file" id="excelFiles" accept=".xlsx,.xls,.csv" multiple>
- <div class="row"><button class="primary" id="importBtn">استيراد الملفات المحددة</button><button id="backupBtn">تحميل نسخة احتياطية JSON</button><input type="file" id="restoreFile" accept=".json"></div>
- <p id="importStatus" class="muted">الأعمدة المدعومة: Session / Ticker / Instrument / Opening / Last Price / High / Low / Volume (MAD) / Traded Shares / Number of Trades.</p>
-</section>
-<section id="watch" class="section panel">
- <h3>قائمتي للمراقبة</h3><div class="row"><input id="watchTicker" placeholder="رمز السهم مثل ADI"><input id="watchNote" placeholder="ملاحظة"><button class="primary" id="addWatch">إضافة</button></div><div id="watchRows"></div>
-</section>
-</main><footer>BOURSE RADAR MAROC · البيانات المحلية محفوظة على هذا الجهاز · لا توجد تغذية مباشرة للأسعار</footer>
+  <div class="grid">
+    <div class="card"><div class="label">عدد الأسهم</div><div class="value" id="stockCount">0</div></div>
+    <div class="card"><div class="label">السجلات الصالحة للتحليل</div><div class="value" id="recordCount">0</div></div>
+    <div class="card"><div class="label">قيمة تداول آخر جلسة (MAD)</div><div class="value" id="marketVolume">—</div></div>
+    <div class="card"><div class="label">آخر تاريخ مسجل</div><div class="value" id="lastDate">—</div></div>
+  </div>
+
+  <div class="note">تنبيه مهم: التطبيق لا يتصل مباشرة ببورصة الدار البيضاء ولا يستقبل دفتر الأوامر. مؤشرات ضغط الشراء/البيع ورصد الحيتان تقديرية محسوبة من طفرات السيولة وسلوك الشموع، وليست بيانات فعلية لهوية المشترين والبائعين.</div>
+
+  <nav id="mainNav">
+    <button class="tab active" data-tab="market">السوق</button>
+    <button class="tab" data-tab="ranking">أفضل فرص اليوم</button>
+    <button class="tab" data-tab="whales">🐋 رادار الحيتان</button>
+    <button class="tab" data-tab="analysis">التحليل</button>
+    <button class="tab" data-tab="radar">ضغط الشراء والبيع</button>
+    <button class="tab" data-tab="import">استيراد Excel</button>
+    <button class="tab" data-tab="watch">قائمتي</button>
+  </nav>
+
+  <!-- السوق -->
+  <section id="market" class="section active panel">
+    <div class="row">
+      <input id="searchStock" placeholder="ابحث برمز السهم أو اسم الشركة">
+      <select id="sortMarket">
+        <option value="volume">الأعلى قيمة تداول</option>
+        <option value="change">أعلى تغير يومي</option>
+        <option value="score">الأعلى تقييماً</option>
+        <option value="ticker">رمز السهم</option>
+        <option value="date">الأحدث تاريخاً</option>
+      </select>
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead>
+          <tr><th>السهم</th><th>آخر سعر</th><th>التغير</th><th>قيمة التداول (MAD)</th><th>ضغط تقديري</th><th>التاريخ</th></tr>
+        </thead>
+        <tbody id="marketRows"></tbody>
+      </table>
+    </div>
+    <div id="stockCards" class="stockgrid"></div>
+  </section>
+
+  <!-- أفضل فرص اليوم -->
+  <section id="ranking" class="section panel">
+    <h3>ترتيب الأسهم حسب قوة الإشارة</h3>
+    <p class="muted">الترتيب مبني على الاتجاه والزخم والسيولة والضغط السعري، ولا يعني توصية شراء.</p>
+    <div class="tablebox">
+      <table>
+        <thead>
+          <tr><th>الترتيب</th><th>السهم</th><th>النقاط /100</th><th>التغير</th><th>نسبة الحجم</th><th>الضغط</th><th>الإشارة</th></tr>
+        </thead>
+        <tbody id="rankingRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- رادار الحيتان -->
+  <section id="whales" class="section panel">
+    <h3>🐋 رصد فترات دخول وخروج الحيتان (السيولة المؤسسية)</h3>
+    <p class="muted">يحدد الفترات الزمنية التي شهدت طفرات سيولة غير اعتيادية مع إغلاق اتجاهي، ويستعرض خطوط الدعم والمقاومة التاريخية لحظة بدء تلك الفترة.</p>
+
+    <div class="row" style="margin-top:8px">
+      <select id="whaleTicker"></select>
+      <select id="whaleSensitivity">
+        <option value="1.8">حساسية قياسية (سيولة ≥ 1.8× المتوسط)</option>
+        <option value="1.5">حساسية عالية (سيولة ≥ 1.5× المتوسط)</option>
+        <option value="2.3">حساسية صارمة (سيولة ≥ 2.3× المتوسط)</option>
+      </select>
+    </div>
+
+    <div class="kpis" id="whaleKpis" style="margin-top:8px"></div>
+
+    <canvas id="whaleChart"></canvas>
+    <div class="legend">
+      <span><i class="dot" style="background:#20c997"></i> منحنى الإغلاق</span>
+      <span><i class="dot" style="background:rgba(32,201,151,0.28);border:1px solid #20c997"></i> فترة تجميع (شراء حيتان)</span>
+      <span><i class="dot" style="background:rgba(255,107,107,0.28);border:1px solid #ff6b6b"></i> فترة تصريف (بيع حيتان)</span>
+      <span><i class="dot" style="background:#4dabf7"></i> خط الدعم عند البداية</span>
+      <span><i class="dot" style="background:#ffc857"></i> خط المقاومة عند البداية</span>
+    </div>
+
+    <div id="whaleSummary" class="info" style="margin-top:10px">اختر سهماً لعرض فترات نشاط الحيتان.</div>
+
+    <h4 style="margin:16px 0 6px">سجل الفترات الزمنية المرصودة (انقر على أي فترة لعرض دعمها ومقاومتها على الرسم)</h4>
+    <div class="tablebox">
+      <table>
+        <thead>
+          <tr>
+            <th>نوع الحركة</th>
+            <th>الفترة الزمنية (من ← إلى)</th>
+            <th>عدد الجلسات</th>
+            <th>نطاق السعر خلال الفترة</th>
+            <th>مضاعف السيولة</th>
+            <th>الدعم عند البداية</th>
+            <th>المقاومة عند البداية</th>
+            <th>الوضع بعد الفترة</th>
+          </tr>
+        </thead>
+        <tbody id="whaleRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- التحليل -->
+  <section id="analysis" class="section panel">
+    <h3>التحليل الفني المتقدم</h3>
+    <select id="analysisTicker"></select>
+    <div class="kpis" id="analysisKpis"></div>
+    <canvas id="priceChart"></canvas>
+    <div id="analysisText" class="info" style="margin-top:10px">اختر سهماً لعرض التحليل.</div>
+  </section>
+
+  <!-- ضغط الشراء والبيع -->
+  <section id="radar" class="section panel">
+    <h3>رادار ضغط الشراء والبيع</h3>
+    <p class="muted">تقدير مبني على مكان الإغلاق داخل نطاق الشمعة، مع مراعاة قيمة التداول مقارنة بمتوسط 20 جلسة.</p>
+    <div class="tablebox">
+      <table>
+        <thead>
+          <tr><th>السهم</th><th>قيمة التداول (MAD)</th><th>متوسط 20 جلسة</th><th>نسبة الحجم</th><th>ضغط شراء</th><th>ضغط بيع</th><th>التجميع/التصريف</th></tr>
+        </thead>
+        <tbody id="radarRows"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- استيراد وتحديث البيانات -->
+  <section id="import" class="section panel">
+    <h3>استيراد وتحديث بيانات بورصة الدار البيضاء</h3>
+    <p class="muted">اختر عدة ملفات Excel أو CSV، أو حدّث من ملف JSON خارجي. الدمج يحدّث السجلات المتطابقة ولا يحذف تاريخك السابق.</p>
+
+    <input type="file" id="excelFiles" accept=".xlsx,.xls,.csv" multiple>
+    <div class="row">
+      <button class="primary" id="importBtn">استيراد الملفات المحددة</button>
+      <button id="backupBtn">تحميل نسخة احتياطية JSON</button>
+      <button class="danger" id="clearBtn">مسح البيانات المحلية</button>
+    </div>
+
+    <div style="margin-top:12px">
+      <label class="label">تحديث من رابط ملف JSON (افتراضياً ./data.json في نفس مجلد التطبيق):</label>
+      <div class="row">
+        <input id="jsonFeedUrl" value="./data.json" placeholder="./data.json أو رابط مباشر">
+        <button class="primary" id="syncJsonBtn">تحديث من الرابط</button>
+      </div>
+    </div>
+
+    <div style="margin-top:10px">
+      <label class="label">استعادة نسخة احتياطية JSON من الجهاز:</label>
+      <input type="file" id="restoreFile" accept=".json">
+    </div>
+
+    <p id="importStatus" class="muted" style="margin-top:8px">الأعمدة المدعومة: Session / Ticker / Instrument / Opening / Last Price / High / Low / Volume (MAD) / Traded Shares / Number of Trades.</p>
+  </section>
+
+  <!-- قائمتي -->
+  <section id="watch" class="section panel">
+    <h3>قائمتي للمراقبة</h3>
+    <div class="row">
+      <input id="watchTicker" placeholder="رمز السهم مثل ADI">
+      <input id="watchNote" placeholder="ملاحظة">
+      <button class="primary" id="addWatch">إضافة</button>
+    </div>
+    <div id="watchRows"></div>
+  </section>
+</main>
+
+<footer>BOURSE RADAR MAROC · البيانات المحلية محفوظة على هذا الجهاز · لا توجد تغذية مباشرة للأسعار</footer>
+
 <script>
 "use strict";
-const DB_KEY="brm_market_data_v2", WATCH_KEY="myStocks";
-let records=[];
-const $=id=>document.getElementById(id);
-const num=v=>{if(typeof v==="number")return Number.isFinite(v)?v:0;let s=String(v??"").trim().replace(/\s/g,"").replace(/٬/g,"").replace(/٫/g,".");if(s.includes(",")&&!s.includes("."))s=s.replace(",",".");else s=s.replace(/,/g,"");return Number(s)||0};
-function norm(s){return String(s??"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]/g,"")}
-function parseDate(v){
- if(v instanceof Date&&!isNaN(v))return `${v.getFullYear()}-${String(v.getMonth()+1).padStart(2,"0")}-${String(v.getDate()).padStart(2,"0")}`;
- if(typeof v==="number"&&v>20000&&v<80000&&window.XLSX){let d=XLSX.SSF.parse_date_code(v);return `${d.y}-${String(d.m).padStart(2,"0")}-${String(d.d).padStart(2,"0")}`}
- let s=String(v??"").trim(),m=s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);if(m)return `${m[3]}-${m[2].padStart(2,"0")}-${m[1].padStart(2,"0")}`;
- m=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);if(m)return `${m[1]}-${m[2].padStart(2,"0")}-${m[3].padStart(2,"0")}`;return "";
+const DB_KEY = "brm_market_data_v2", WATCH_KEY = "myStocks";
+let records = [];
+let analysisCache = new Map();
+let selectedWhalePeriodIdx = 0;
+
+const $ = id => document.getElementById(id);
+
+const num = v => {
+  if (typeof v === "number") return Number.isFinite(v) ? v : 0;
+  let s = String(v ?? "").trim().replace(/\s|\u00A0/g, "").replace(/٬/g, "").replace(/٫/g, ".");
+  if (s.includes(",") && !s.includes(".")) s = s.replace(",", ".");
+  else s = s.replace(/,/g, "");
+  return Number(s) || 0;
+};
+
+function norm(s) {
+  return String(s ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
 }
-function normalizeStored(x){
- const ticker=String(x.ticker??x.Ticker??"").trim().toUpperCase(),date=parseDate(x.date??x.Session??x.session??x.seance);
- const close=num(x.close??x.lastPrice??x["Last Price"]??x["Dernier Cours"]);if(!ticker||!date||close<=0)return null;
- return {ticker,name:String(x.name??x.Instrument??x.instrument??ticker),date,open:num(x.open??x.Opening??x.Ouverture),close,high:num(x.high??x.High??x["Plus Haut"]),low:num(x.low??x.Low??x["Plus Bas"]),volume:num(x.volume??x["Volume (MAD)"]),shares:num(x.shares??x["Traded Shares"]??x["Titres Échangés"]),trades:num(x.trades??x["Number of Trades"]??x["Nb Transactions"]),cap:num(x.cap??x["Market Capitalization"]??x.Capitalisation)};
+
+function parseDate(v) {
+  if (v instanceof Date && !isNaN(v)) {
+    const d = new Date(v.getTime() + 12 * 3600 * 1000);
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, "0")}-${String(d.getUTCDate()).padStart(2, "0")}`;
+  }
+  if (typeof v === "number" && v > 20000 && v < 80000 && window.XLSX) {
+    const d = XLSX.SSF.parse_date_code(v);
+    if (d) return `${d.y}-${String(d.m).padStart(2, "0")}-${String(d.d).padStart(2, "0")}`;
+  }
+  const s = String(v ?? "").trim();
+  let m = s.match(/^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/);
+  if (m) {
+    let day = Number(m[1]), month = Number(m[2]), year = m[3];
+    if (month > 12 && day <= 12) [day, month] = [month, day];
+    return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+  }
+  m = s.match(/^(\d{4})[\/.-](\d{1,2})[\/.-](\d{1,2})/);
+  if (m) return `${m[1]}-${m[2].padStart(2, "0")}-${m[3].padStart(2, "0")}`;
+  return "";
 }
-function loadRecords(){try{records=JSON.parse(localStorage.getItem(DB_KEY)||"[]").map(normalizeStored).filter(Boolean)}catch{records=[]}
- if(!records.length){for(let i=0;i<localStorage.length;i++){let k=localStorage.key(i);if(!k||k===WATCH_KEY||k===DB_KEY)continue;try{let v=JSON.parse(localStorage.getItem(k));if(Array.isArray(v)&&v.length&&v.some(x=>x&&(x.ticker||x.Ticker)&&(x.date||x.Session||x.session))){records=v.map(normalizeStored).filter(Boolean);if(records.length)saveRecords();break}}catch{}}}}
-function saveRecords(){localStorage.setItem(DB_KEY,JSON.stringify(records))}
-function validRecords(){const today=new Date();today.setHours(0,0,0,0);const iso=`${today.getFullYear()}-${String(today.getMonth()+1).padStart(2,"0")}-${String(today.getDate()).padStart(2,"0")}`;return records.filter(r=>r.date<=iso)}
-function latestByTicker(){const map={};for(const r of validRecords()){if(!map[r.ticker]||r.date>map[r.ticker].date)map[r.ticker]=r}return Object.values(map)}
-function history(t){return validRecords().filter(r=>r.ticker===t).sort((a,b)=>a.date.localeCompare(b.date))}
-function fmt(n,d=2){return Number(n||0).toLocaleString("fr-FR",{minimumFractionDigits:d,maximumFractionDigits:d})}
-function dateFmt(s){return s?s.split("-").reverse().join("/"):"—"}
-function pct(a,b){return b?((a-b)/b)*100:0}
-function sma(a,n){let x=a.slice(-n);return x.length?x.reduce((s,v)=>s+v,0)/x.length:0}
-function rsi(a,n=14){if(a.length<n+1)return null;let g=0,l=0;for(let i=a.length-n;i<a.length;i++){let d=a[i]-a[i-1];if(d>0)g+=d;else l-=d}if(l===0)return 100;return 100-100/(1+g/l)}
-function ema(a,n){if(!a.length)return [];let k=2/(n+1),out=[a[0]];for(let i=1;i<a.length;i++)out.push(a[i]*k+out[i-1]*(1-k));return out}
-function macd(a){if(a.length<26)return null;let e12=ema(a,12),e26=ema(a,26),line=a.map((_,i)=>e12[i]-e26[i]),sig=ema(line,9);return {line:line.at(-1),signal:sig.at(-1),hist:line.at(-1)-sig.at(-1)}}
-function dailyChange(r){let h=history(r.ticker);return h.length>1?pct(h.at(-1).close,h.at(-2).close):0}
-function pressure(h){
- const r=h.at(-1);if(!r||!r.volume)return {buy:0,sell:0,ratio:0,avg:0,tag:"حجم غير متاح",acc:"غير كاف"};
- const span=Math.max(0,(r.high||r.close)-(r.low||r.close)),loc=span>0?Math.max(0,Math.min(1,((r.close-(r.low||r.close))/span))):.5;
- const avg=sma(h.slice(0,-1).map(x=>x.volume),20),ratio=avg?r.volume/avg:0;
- const buy=Math.round(loc*100),sell=100-buy;
- let acc="محايد";if(ratio>=1.3&&loc>=.65)acc="تجميع محتمل";else if(ratio>=1.3&&loc<=.35)acc="تصريف محتمل";
- let tag=ratio>=1.5?(buy>=60?"ضغط شراء قوي":sell>=60?"ضغط بيع قوي":"نشاط مرتفع متوازن"):buy>=65?"ميل شرائي":sell>=65?"ميل بيعي":"متوازن";
- return {buy,sell,ratio,avg,tag,acc};
+
+function normalizeStored(x, fallbackTicker = "") {
+  const ticker = String(x.ticker ?? x.Ticker ?? fallbackTicker ?? "").trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+  const date = parseDate(x.date ?? x.Session ?? x.session ?? x.seance ?? x.Séance);
+  const close = num(x.close ?? x.lastPrice ?? x["Last Price"] ?? x["Dernier Cours"] ?? x["Cours de clôture"]);
+  if (!ticker || !date || close <= 0) return null;
+  const open = num(x.open ?? x.Opening ?? x.Ouverture) || close;
+  const high = Math.max(close, open, num(x.high ?? x.High ?? x["Plus Haut"]));
+  const lowRaw = num(x.low ?? x.Low ?? x["Plus Bas"]);
+  const low = lowRaw > 0 ? Math.min(close, open, lowRaw) : Math.min(close, open);
+  return {
+    ticker,
+    name: String(x.name ?? x.Instrument ?? x.instrument ?? ticker).trim() || ticker,
+    date, open, close, high, low,
+    volume: num(x.volume ?? x["Volume (MAD)"] ?? x["Volume"]),
+    shares: num(x.shares ?? x["Traded Shares"] ?? x["Titres Échangés"]),
+    trades: num(x.trades ?? x["Number of Trades"] ?? x["Nb Transactions"]),
+    cap: num(x.cap ?? x["Market Capitalization"] ?? x.Capitalisation)
+  };
 }
-function analyze(t){
- const h=history(t),a=h.map(x=>x.close);if(!h.length)return null;
- const last=h.at(-1),prev=h.at(-2),change=prev?pct(last.close,prev.close):0,rs=rsi(a),s5=sma(a,5),s20=sma(a,20),m=macd(a),p=pressure(h);
- const prior=h.slice(-21,-1),priorHigh=prior.length?Math.max(...prior.map(x=>x.high||x.close)):0;
- const breakout=prior.length>=10&&last.close>priorHigh&&p.ratio>=1.5;
- const recent=h.slice(-5),recentAvg=recent.reduce((s,x)=>s+x.close,0)/Math.max(1,recent.length);
- let score=0;score+=last.close>s20?20:0;score+=s5>s20?10:0;score+=rs===null?0:rs>=50&&rs<=70?15:rs>70?7:rs>=40?8:0;score+=m?(m.hist>0?15:0)+(m.line>m.signal?5:0):0;score+=p.ratio>=1.5?15:p.ratio>=1.2?10:0;score+=p.buy>=65?20:p.buy>=55?12:p.sell>=70?0:7;score=Math.min(100,score);
- let signal=breakout?"اختراق محتمل":score>=75?"إيجابية قوية":score>=60?"إيجابية حذرة":score>=40?"مراقبة / محايد":"ضعف نسبي";
- return {h,last,prev,change,rs,s5,s20,m,p,priorHigh,breakout,score,signal,support:Math.min(...h.slice(-20).map(x=>x.low||x.close)),resistance:Math.max(...h.slice(-20).map(x=>x.high||x.close)),recentAvg};
+
+function loadRecords() {
+  try {
+    records = JSON.parse(localStorage.getItem(DB_KEY) || "[]").map(x => normalizeStored(x)).filter(Boolean);
+  } catch { records = []; }
 }
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function refresh(){
- const valid=validRecords(),latest=latestByTicker().sort((a,b)=>a.ticker.localeCompare(b.ticker)),dates=valid.map(r=>r.date).sort(),newest=dates.at(-1)||"";
- $("stockCount").textContent=latest.length;$("recordCount").textContent=valid.length;$("lastDate").textContent=dateFmt(newest);
- $("marketVolume").textContent=fmt(latest.filter(r=>r.date===newest).reduce((s,r)=>s+r.volume,0),0);
- const q=$("searchStock").value.trim().toUpperCase();let list=latest.filter(r=>(r.ticker+" "+r.name).toUpperCase().includes(q)),mode=$("sortMarket").value;
- list.sort((a,b)=>mode==="volume"?b.volume-a.volume:mode==="ticker"?a.ticker.localeCompare(b.ticker):mode==="change"?dailyChange(b)-dailyChange(a):b.date.localeCompare(a.date));
- $("marketRows").innerHTML=list.map(r=>{let a=analyze(r.ticker),p=a?.change||0;return `<tr><td><b>${r.ticker}</b><br><small>${esc(r.name)}</small></td><td>${fmt(r.close)}</td><td class="${p>=0?'positive':'negative'}">${p>=0?'+':''}${fmt(p)}%</td><td>${fmt(r.volume,0)}</td><td>${a?.p.tag||"—"}</td><td>${dateFmt(r.date)}</td></tr>`}).join("")||'<tr><td colspan="6">لا توجد بيانات. استورد ملف Excel أولاً.</td></tr>';
- $("stockCards").innerHTML=list.map(r=>{let a=analyze(r.ticker);return a?`<article class="stockcard"><div class="stockhead"><b>${r.ticker} · ${esc(r.name)}</b><span class="pill">${a.score}/100</span></div><div style="font-size:20px;margin:8px 0">${fmt(r.close)} MAD <small class="${a.change>=0?'positive':'negative'}">${a.change>=0?'+':''}${fmt(a.change)}%</small></div><div class="label">${a.signal} · ${a.p.tag}</div><div class="meter"><i style="width:${a.score}%"></i></div><small>حجم التداول مقارنة بمتوسط 20 جلسة: ${a.p.avg?fmt(a.p.ratio,2)+"×":"غير متاح"}</small></article>`:""}).join("");
- const sel=$("analysisTicker"),old=sel.value;sel.innerHTML=latest.map(r=>`<option value="${r.ticker}">${r.ticker} — ${esc(r.name)}</option>`).join("");if(latest.some(r=>r.ticker===old))sel.value=old;
- renderAnalysis();renderRadar();renderRanking();renderWatch();
+
+function saveRecords() {
+  localStorage.setItem(DB_KEY, JSON.stringify(records));
 }
-function renderAnalysis(){
- const t=$("analysisTicker").value,a=analyze(t);if(!a){$("analysisKpis").innerHTML="";$("analysisText").textContent="اختر سهماً بعد استيراد البيانات.";return}
- const {last,change,rs,s5,s20,m,p}=a;
- const cells=[["آخر سعر",fmt(last.close)+" MAD"],["التغير اليومي",(change>=0?"+":"")+fmt(change)+"%"],["RSI 14",rs===null?"غير كاف":fmt(rs)],["SMA 5",fmt(s5)],["SMA 20",fmt(s20)],["MACD",m?fmt(m.hist):"غير كاف"],["ضغط الشراء",p.buy+"%"],["نسبة الحجم",p.avg?fmt(p.ratio,2)+"×":"غير متاح"],["قوة الإشارة",a.score+"/100"],["الإشارة",a.signal]];
- $("analysisKpis").innerHTML=cells.map(c=>`<div class="card"><div class="label">${c[0]}</div><div class="value">${c[1]}</div></div>`).join("");
- $("analysisText").innerHTML=`آخر جلسة: <b>${dateFmt(last.date)}</b> · دعم تقريبي: <b>${fmt(a.support)}</b> · مقاومة سابقة: <b>${fmt(a.resistance)}</b><br>الاتجاه: ${last.close>s20?"السعر فوق متوسط 20 جلسة":"السعر تحت متوسط 20 جلسة"}. ${rs===null?"بيانات RSI غير كافية.":rs>70?"RSI مرتفع نسبياً.":rs<30?"RSI منخفض نسبياً.":"RSI في المنطقة الوسطى."}<br>MACD: ${m?(m.hist>0?"زخم موجب":"زخم سالب"):"نحتاج 26 جلسة على الأقل"}. ${a.breakout?"تم تجاوز أعلى سعر للنطاق السابق مع حجم تداول مرتفع.":"لا يوجد اختراق مؤكد وفق شروط الرادار."}<br>الضغط التقديري: شراء ${p.buy}% / بيع ${p.sell}%. <small>الحساب تقريبي من الشمعة والحجم، وليس من دفتر الأوامر. مستويات الدعم والمقاومة تاريخية وليست ضماناً.</small>`;
- drawChart(a.h.map(x=>x.close));
+
+function mergeRecords(incomingList, fallbackTicker = "") {
+  const map = new Map(records.map(r => [`${r.ticker}_${r.date}`, r]));
+  let added = 0, updated = 0, skipped = 0;
+
+  for (const item of incomingList) {
+    const rec = normalizeStored(item, fallbackTicker);
+    if (!rec) { skipped++; continue; }
+    const key = `${rec.ticker}_${rec.date}`;
+    if (map.has(key)) updated++; else added++;
+    map.set(key, rec);
+  }
+
+  records = [...map.values()];
+  saveRecords();
+  refresh();
+  return { added, updated, skipped };
 }
-function drawChart(a){const c=$("priceChart"),ctx=c.getContext("2d"),w=c.width,h=c.height;ctx.clearRect(0,0,w,h);if(!a.length)return;let min=Math.min(...a),max=Math.max(...a);if(max===min)max=min+1;ctx.strokeStyle="#20c997";ctx.lineWidth=3;ctx.beginPath();a.forEach((v,i)=>{let x=24+i*(w-48)/Math.max(1,a.length-1),y=h-24-(v-min)/(max-min)*(h-48);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.stroke();ctx.fillStyle="#9bb1c1";ctx.font="14px Arial";ctx.fillText(fmt(max),8,16);ctx.fillText(fmt(min),8,h-5)}
-function renderRadar(){
- const latest=latestByTicker();$("radarRows").innerHTML=latest.map(r=>{let a=analyze(r.ticker),p=a.p;return `<tr><td><b>${r.ticker}</b></td><td>${fmt(r.volume,0)}</td><td>${p.avg?fmt(p.avg,0):"—"}</td><td>${p.avg?fmt(p.ratio,2)+"×":"—"}</td><td class="positive">${p.buy}%</td><td class="negative">${p.sell}%</td><td>${p.acc}</td></tr>`}).join("")||'<tr><td colspan="7">لا توجد بيانات.</td></tr>';
+
+function validRecords() {
+  const today = new Date();
+  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  return records.filter(r => r.date <= iso);
 }
-function renderRanking(){
- const arr=latestByTicker().map(r=>({r,a:analyze(r.ticker)})).filter(x=>x.a).sort((x,y)=>y.a.score-x.a.score);
- $("rankingRows").innerHTML=arr.map((x,i)=>`<tr><td>${i+1}</td><td><b>${x.r.ticker}</b></td><td>${x.a.score}/100</td><td class="${x.a.change>=0?'positive':'negative'}">${x.a.change>=0?'+':''}${fmt(x.a.change)}%</td><td>${x.a.p.avg?fmt(x.a.p.ratio,2)+"×":"—"}</td><td>${x.a.p.tag}</td><td>${x.a.signal}</td></tr>`).join("")||'<tr><td colspan="7">لا توجد بيانات كافية.</td></tr>';
+
+function latestByTicker() {
+  const map = {};
+  for (const r of validRecords()) {
+    if (!map[r.ticker] || r.date > map[r.ticker].date) map[r.ticker] = r;
+  }
+  return Object.values(map);
 }
-function getWatch(){try{return JSON.parse(localStorage.getItem(WATCH_KEY)||"[]")}catch{return []}}
-function renderWatch(){let w=getWatch();$("watchRows").innerHTML=w.map((x,i)=>`<div class="card" style="margin-top:8px"><b>${esc(x.ticker)}</b> — ${esc(x.note||"")} <button class="danger" onclick="removeWatch(${i})">حذف</button></div>`).join("")||'<p class="muted">قائمة المراقبة فارغة.</p>'}
-function removeWatch(i){let w=getWatch();w.splice(i,1);localStorage.setItem(WATCH_KEY,JSON.stringify(w));renderWatch()}
-$("addWatch").onclick=()=>{let ticker=$("watchTicker").value.trim().toUpperCase();if(!ticker)return;let w=getWatch();if(!w.some(x=>x.ticker===ticker))w.push({ticker,note:$("watchNote").value.trim()});localStorage.setItem(WATCH_KEY,JSON.stringify(w));$("watchTicker").value="";$("watchNote").value="";renderWatch()};
-function headerIndex(headers,keys){return headers.findIndex(h=>keys.includes(norm(h)))}
-async function importFiles(){
- const files=[...$("excelFiles").files];if(!files.length){$("importStatus").textContent="اختر ملف Excel أولاً.";return}
- if(typeof XLSX==="undefined"){$("importStatus").textContent="تعذر تحميل مكتبة Excel. تحقق من الإنترنت ثم أعد المحاولة.";return}
- let added=0,skipped=0,errors=[];
- for(const file of files){try{const buf=await file.arrayBuffer(),wb=XLSX.read(buf,{type:"array",cellDates:true}),sheet=wb.Sheets[wb.SheetNames[0]],rows=XLSX.utils.sheet_to_json(sheet,{defval:"",raw:true});
-  for(const row of rows){const keys=Object.keys(row),get=aliases=>{let i=headerIndex(keys,aliases.map(norm));return i<0?"":row[keys[i]]};
-   const rec=normalizeStored({ticker:get(["Ticker","Code","Symbole"]),name:get(["Instrument","Name","Valeur"]),date:get(["Séance","Seance","Session","Date"]),ope
+
+function history(t) {
+  return validRecords().filter(r => r.ticker === t).sort((a, b) => a.date.localeCompare(b.date));
+}
+
+const fmt = (n, d = 2) => Number(n || 0).toLocaleString("fr-FR", { minimumFractionDigits: d, maximumFractionDigits: d });
+const dateFmt = s => s ? s.split("-").reverse().join("/") : "—";
+const pct = (a, b) => b ? ((a - b) / b) * 100 : 0;
+const sma = (a, n) => { const x = a.slice(-n); return x.length ? x.reduce((s, v) => s + v, 0) / x.length : 0; };
+
+function rsi(a, n = 14) {
+  if (a.length < n + 1) return null;
+  let avgGain = 0, avgLoss = 0;
+  for (let i = 1; i <= n; i++) {
+    const d = a[i] - a[i - 1];
+    if (d > 0) avgGain += d; else avgLoss -= d;
+  }
+  avgGain /= n; avgLoss /= n;
+  for (let i = n + 1; i < a.length; i++) {
+    const d = a[i] - a[i - 1];
+    avgGain = (avgGain * (n - 1) + (d > 0 ? d : 0)) / n;
+    avgLoss = (avgLoss * (n - 1) + (d < 0 ? -d : 0)) / n;
+  }
+  return avgLoss === 0 ? 100 : 100 - 100 / (1 + avgGain / avgLoss);
+}
+
+function ema(a, n) {
+  if (!a.length) return [];
+  const k = 2 / (n + 1), out = [a[0]];
+  for (let i = 1; i < a.length; i++) out.push(a[i] * k + out[i - 1] * (1 - k));
+  return out;
+}
+
+function macd(a) {
+  if (a.length < 26) return null;
+  const e12 = ema(a, 12), e26 = ema(a, 26);
+  const line = a.map((_, i) => e12[i] - e26[i]);
+  const sig = ema(line, 9);
+  return { line: line.at(-1), signal: sig.at(-1), hist: line.at(-1) - sig.at(-1) };
+}
+
+function pressure(h) {
+  const r = h.at(-1);
+  if (!r || !r.volume) return { buy: 0, sell: 0, ratio: 0, avg: 0, tag: "حجم غير متاح", acc: "غير كاف" };
+  const span = Math.max(0, r.high - r.low);
+  const loc = span > 0 ? Math.max(0, Math.min(1, (r.close - r.low) / span)) : 0.5;
+  const prevVols = h.slice(0, -1).map(x => x.volume).filter(v => v > 0);
+  const avg = sma(prevVols, 20);
+  const ratio = avg ? r.volume / avg : 0;
+  const buy = Math.round(loc * 100), sell = 100 - buy;
+  let acc = "محايد";
+  if (ratio >= 1.3 && loc >= 0.65) acc = "تجميع محتمل";
+  else if (ratio >= 1.3 && loc <= 0.35) acc = "تصريف محتمل";
+  const tag = ratio >= 1.5
+    ? (buy >= 60 ? "ضغط شراء قوي" : sell >= 60 ? "ضغط بيع قوي" : "نشاط مرتفع متوازن")
+    : buy >= 65 ? "ميل شرائي" : sell >= 65 ? "ميل بيعي" : "متوازن";
+  return { buy, sell, ratio, avg, tag, acc };
+}
+
+function detectWhalePeriods(h, minVolMult = 1.8) {
+  if (h.length < 10) return [];
+  const events = [];
+
+  for (let i = 5; i < h.length; i++) {
+    const r = h[i];
+    if (!r.volume || r.volume <= 0) continue;
+
+    const lookbackVols = h.slice(Math.max(0, i - 20), i).map(x => x.volume).filter(v => v > 0);
+    if (lookbackVols.length < 5) continue;
+    const avgVol = lookbackVols.reduce((s, v) => s + v, 0) / lookbackVols.length;
+    const volRatio = r.volume / avgVol;
+    if (volRatio < minVolMult) continue;
+
+    const span = r.high - r.low;
+    const prevClose = h[i - 1].close;
+    const dayRet = pct(r.close, prevClose);
+    const clv = span > 0 ? (r.close - r.low) / span : (dayRet > 0 ? 0.8 : dayRet < 0 ? 0.2 : 0.5);
+
+    let type = null;
+    if (clv >= 0.62 || (dayRet >= 1.2 && clv >= 0.5)) type = "BUY";
+    else if (clv <= 0.38 || (dayRet <= -1.2 && clv <= 0.5)) type = "SELL";
+    if (!type) continue;
+
+    const srWindow = h.slice(Math.max(0, i - 20), i);
+    const supportAtStart = Math.min(...srWindow.map(x => x.low));
+    const resistanceAtStart = Math.max(...srWindow.map(x => x.high));
+
+    events.push({
+      idx: i, date: r.date, type, volRatio, volume: r.volume,
+      close: r.close, low: r.low, high: r.high,
+      supportAtStart, resistanceAtStart
+    });
+  }
+
+  const periods = [];
+  for (const ev of events) {
+    const last = periods.at(-1);
+    if (last && last.type === ev.type && (ev.idx - last.endIdx) <= 4) {
+      last.endIdx = ev.idx;
+      last.endDate = ev.date;
+      last.sessions += 1;
+      last.totalVolume += ev.volume;
+      last.maxVolRatio = Math.max(last.maxVolRatio, ev.volRatio);
+      last.periodLow = Math.min(last.periodLow, ev.low);
+      last.periodHigh = Math.max(last.periodHigh, ev.high);
+      last.endClose = ev.close;
+    } else {
+      periods.push({
+        type: ev.type, startIdx: ev.idx, endIdx: ev.idx,
+        startDate: ev.date, endDate: ev.date, sessions: 1,
+        totalVolume: ev.volum
