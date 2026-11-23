@@ -1004,6 +1004,11 @@ window.addEventListener("resize", () => {
 
 loadRecords();
 refresh();
-</script>
+</script>const AUTO_SYNC_MS = 15 * 60 * 1000; // كل 15 دقيقة
+setInterval(() => {
+  if (document.visibilityState === "visible") {
+    syncFromJsonUrl();
+  }
+}, AUTO_SYNC_MS);
 </body>
 </html>
