@@ -1,92 +1,435 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-<meta charset="utf-8">
+<meta charset="UTF-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#101a2b">
 <title>BOURSE RADAR MAROC</title>
 <link rel="manifest" href="manifest.webmanifest">
+
 <style>
-:root{--bg:#0b1220;--panel:#121e30;--panel2:#17263b;--line:#26374e;--txt:#edf3fb;--muted:#91a4bc;--green:#20c997;--red:#ff647c;--gold:#f5bd4f;--blue:#65a8ff}
-*{box-sizing:border-box}body{margin:0;background:linear-gradient(140deg,#0b1220,#101c30);color:var(--txt);font-family:Tahoma,Arial,sans-serif}
-header{padding:22px 5vw 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-.brand{font-size:21px;font-weight:800;letter-spacing:.5px}.brand span{color:var(--green)}.sub{color:var(--muted);font-size:12px;margin-top:6px}
-.badge{border:1px solid #46617e;border-radius:30px;padding:8px 12px;color:#c8d8ea;font-size:12px}
-main{max-width:1200px;margin:auto;padding:22px 5vw 60px}
-h2{font-size:18px;margin:0 0 14px}.muted{color:var(--muted)}.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.card{background:linear-gradient(150deg,var(--panel),#101a2a);border:1px solid var(--line);border-radius:16px;padding:16px;box-shadow:0 8px 24px #0002}
-.label{font-size:12px;color:var(--muted)}.value{font-size:24px;font-weight:800;margin:10px 0 5px}.up{color:var(--green)}.down{color:var(--red)}.gold{color:var(--gold)}
-.section{margin-top:26px}.row{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
-button,.tab{background:var(--panel2);color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:9px 13px;cursor:pointer}
-button.active,.tab.active{background:#1b3855;border-color:#4c8ed0}
-table{width:100%;border-collapse:collapse;font-size:13px}th,td{padding:13px 10px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}th{color:var(--muted);font-weight:500}
-.pill{padding:5px 9px;border-radius:20px;font-size:11px}.buy{background:#123d37;color:#5ce2bc}.sell{background:#482532;color:#ff91a2}.watch{background:#47391d;color:#ffd27a}
-.signal-layout{display:grid;grid-template-columns:1.2fr .8fr;gap:12px}.meter{height:10px;border-radius:20px;background:#29384c;overflow:hidden;margin:10px 0}.meter i{display:block;height:100%;width:62%;background:linear-gradient(90deg,#20c997,#f5bd4f)}
-.notice{background:#2b2518;border:1px solid #6b552b;color:#f4d58e;padding:12px 14px;border-radius:12px;font-size:12px;line-height:1.8;margin-top:16px}
-nav{display:flex;gap:8px;flex-wrap:wrap;margin:18px 0}.chart{height:150px;display:flex;align-items:end;gap:8px;padding:15px 5px 0}.bar{flex:1;background:linear-gradient(#65a8ff,#285b91);border-radius:6px 6px 0 0;min-width:8px}
-footer{text-align:center;color:var(--muted);font-size:11px;padding:25px}
-@media(max-width:800px){.grid{grid-template-columns:repeat(2,1fr)}.signal-layout{grid-template-columns:1fr}table{font-size:11px}th,td{padding:10px 6px}}
-@media(max-width:420px){.value{font-size:20px}.card{padding:12px}}
+:root{
+--bg:#0b1220;
+--panel:#121e30;
+--line:#26374e;
+--txt:#edf3fb;
+--muted:#91a4bc;
+--green:#20c997;
+--red:#ff647c;
+--gold:#f5bd4f;
+}
+
+*{box-sizing:border-box}
+
+body{
+margin:0;
+background:linear-gradient(140deg,#0b1220,#101c30);
+color:var(--txt);
+font-family:Tahoma,Arial,sans-serif;
+}
+
+header{
+padding:22px 5%;
+border-bottom:1px solid var(--line);
+display:flex;
+justify-content:space-between;
+flex-wrap:wrap;
+gap:12px;
+}
+
+.brand{font-size:22px;font-weight:bold}
+.brand span{color:var(--green)}
+.sub{color:var(--muted);font-size:12px;margin-top:6px}
+
+main{max-width:1100px;margin:auto;padding:22px 5%}
+
+h2{font-size:18px}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(2,1fr);
+gap:12px;
+}
+
+.card{
+background:var(--panel);
+border:1px solid var(--line);
+border-radius:14px;
+padding:16px;
+margin-bottom:12px;
+}
+
+.label{color:var(--muted);font-size:12px}
+.value{font-size:24px;font-weight:bold;margin:10px 0}
+.up{color:var(--green)}
+.down{color:var(--red)}
+.gold{color:var(--gold)}
+.muted{color:var(--muted);font-size:12px}
+
+nav{
+display:flex;
+gap:7px;
+flex-wrap:wrap;
+margin:22px 0;
+}
+
+button{
+background:#17263b;
+color:white;
+border:1px solid var(--line);
+padding:11px 14px;
+border-radius:9px;
+cursor:pointer;
+}
+
+button.active{
+background:#1b3855;
+border-color:#65a8ff;
+}
+
+input,textarea{
+background:#0b1220;
+color:white;
+border:1px solid var(--line);
+padding:12px;
+border-radius:8px;
+width:100%;
+margin:6px 0;
+font-family:Tahoma;
+}
+
+textarea{min-height:65px}
+
+.stock{
+background:#17263b;
+padding:13px;
+border-radius:10px;
+margin-top:10px;
+border:1px solid var(--line);
+}
+
+.stock strong{color:var(--green);font-size:18px}
+
+.delete{
+background:#482532;
+margin-top:8px;
+}
+
+.notice{
+background:#2b2518;
+border:1px solid #6b552b;
+color:#f4d58e;
+padding:13px;
+border-radius:10px;
+font-size:12px;
+line-height:1.8;
+margin-top:20px;
+}
+
+.meter{
+height:10px;
+background:#29384c;
+border-radius:20px;
+overflow:hidden;
+margin:12px 0;
+}
+
+.meter div{
+height:100%;
+background:var(--green);
+}
+
+footer{
+text-align:center;
+padding:25px;
+color:var(--muted);
+font-size:11px;
+}
+
+@media(max-width:450px){
+.value{font-size:20px}
+}
 </style>
 </head>
+
 <body>
+
 <header>
- <div><div class="brand">BOURSE <span>RADAR</span> MAROC</div><div class="sub">رادار بورصة الدار البيضاء · نسخة تجريبية للتصميم</div></div>
- <div class="badge">● وضع تجريبي — بيانات افتراضية</div>
+<div>
+<div class="brand">BOURSE <span>RADAR</span> MAROC</div>
+<div class="sub">رادار بورصة الدار البيضاء</div>
+</div>
+<div class="muted">● النسخة التجريبية</div>
 </header>
+
 <main>
- <div class="row"><div><h2>نظرة عامة على السوق</h2><div class="muted" style="font-size:12px">لوحة مراقبة التداول والتحليل التقني</div></div><div class="muted" style="font-size:12px">آخر تحديث: بيانات توضيحية</div></div>
- <div class="grid" style="margin-top:14px">
-  <div class="card"><div class="label">مؤشر MASI</div><div class="value">14,250.30</div><div class="up">▲ 0.64%</div></div>
-  <div class="card"><div class="label">قيمة التداول</div><div class="value">42.8 <small style="font-size:13px">مليون MAD</small></div><div class="muted">قيمة افتراضية</div></div>
-  <div class="card"><div class="label">ضغط الشراء العام</div><div class="value up">62%</div><div class="muted">مؤشر تجريبي</div></div>
-  <div class="card"><div class="label">الأسهم النشطة</div><div class="value">18</div><div class="muted">من أصل قائمة تجريبية</div></div>
- </div>
- <nav><button class="active" onclick="showTab('market',this)">السوق</button><button onclick="showTab('radar',this)">رادار السيولة</button><button onclick="showTab('watch',this)">قائمتي</button><button onclick="showTab('alerts',this)">التنبيهات</button></nav>
- <section id="market">
-  <div class="row section"><h2>الأسهم الأكثر نشاطاً — مثال توضيحي</h2><span class="muted" style="font-size:11px">ليست أسعاراً حقيقية</span></div>
-  <div class="card" style="overflow:auto"><table><thead><tr><th>السهم</th><th>السعر (MAD)</th><th>التغير</th><th>الحجم</th><th>الإشارة</th></tr></thead><tbody>
-   <tr><td><b>ATW</b></td><td>545.00</td><td class="up">+1.20%</td><td>12,400</td><td><span class="pill buy">ضغط شراء</span></td></tr>
-   <tr><td><b>TGCC</b></td><td>720.00</td><td class="up">+0.85%</td><td>8,900</td><td><span class="pill watch">مراقبة</span></td></tr>
-   <tr><td><b>IAM</b></td><td>98.50</td><td class="down">−0.45%</td><td>21,100</td><td><span class="pill sell">ضغط بيع</span></td></tr>
-   <tr><td><b>DHO</b></td><td>34.20</td><td class="up">+0.30%</td><td>31,500</td><td><span class="pill watch">مراقبة</span></td></tr>
-   <tr><td><b>BCP</b></td><td>286.00</td><td class="up">+0.55%</td><td>6,700</td><td><span class="pill buy">ضغط شراء</span></td></tr>
-  </tbody></table></div>
- </section>
- <section id="radar" style="display:none">
-  <div class="section"><h2>رادار السيولة والصفقات الكبيرة</h2><div class="signal-layout">
-   <div class="card"><div class="label">مثال: ATW — توازن ضغط التداول</div><div class="row"><b>ضغط الشراء</b><b class="up">62%</b></div><div class="meter"><i></i></div><div class="row"><b>ضغط البيع</b><b class="down">38%</b></div><div class="meter"><i style="width:38%;background:var(--red)"></i></div><div class="muted" style="font-size:11px">يُحسب فعلياً عند توفر بيانات الصفقات واتجاهها.</div></div>
-   <div class="card"><div class="label">نشاط الحجم</div><div class="value gold">1.8×</div><div>مقارنة بمتوسط الحجم</div><div class="pill watch" style="display:inline-block;margin-top:12px">نشاط غير عادي — مثال</div></div>
-  </div></div>
-  <div class="card section"><b>حجم التداول عبر الفترات — مثال</b><div class="chart"><i class="bar" style="height:35%"></i><i class="bar" style="height:48%"></i><i class="bar" style="height:42%"></i><i class="bar" style="height:68%"></i><i class="bar" style="height:55%"></i><i class="bar" style="height:92%"></i><i class="bar" style="height:73%"></i><i class="bar" style="height:100%"></i><i class="bar" style="height:64%"></i><i class="bar" style="height:82%"></i></div></div>
- </section>
- <section id=" <section id="watch" style="display:none">
- <div class="section">
-  <h2>قائمتي لمتابعة الأسهم</h2>
 
-  <div class="card">
-   <input id="ticker" placeholder="رمز السهم مثال ADI"
-    style="background:#0b1220;color:white;border:1px solid #26374e;padding:11px;border-radius:8px;width:150px">
+<h2>نظرة عامة على السوق</h2>
+<p class="muted">لوحة مراقبة التداول والتحليل التقني</p>
 
-   <input id="stockNote" placeholder="ملاحظتك حول السهم"
-    style="background:#0b1220;color:white;border:1px solid #26374e;padding:11px;border-radius:8px;margin:5px">
+<div class="grid">
 
-   <button onclick="addStock()">+ إضافة السهم</button>
-  </div>
+<div class="card">
+<div class="label">مؤشر MASI</div>
+<div class="value">--</div>
+<div class="muted">بانتظار ربط البيانات</div>
+</div>
 
-  <div class="card section">
-   <h2>الأسهم التي أراقبها</h2>
-   <div id="mylist"></div>
-  </div>
- </div>
-</section> " style="display:none"><div class="section"><h2>قائمتي لمتابعة الأسهم</h2><div class="card"><p>أضف رموز الأسهم التي تريد مراقبتها في النسخة المتصلة بالبيانات.</p><p class="muted">سيتم حفظ الملاحظات والإشارات محلياً أو في قاعدة بيانات حسب طريقة النشر.</p><input id="ticker" placeholder="مثلاً: ADI" style="background:#0b1220;color:white;border:1px solid var(--line);padding:11px;border-radius:8px;width:150px"><button onclick="addStock()">إضافة سهم</button><ul id="mylist"></ul></div></div></section>
- <section id="alerts" style="display:none"><div class="section"><h2>مركز التنبيهات</h2><div class="card"><p><span class="pill buy">شراء محتمل</span> ATW — ضغط شراء مرتفع (مثال توضيحي)</p><p><span class="pill sell">بيع / حذر</span> IAM — ارتفاع ضغط البيع (مثال توضيحي)</p><p class="muted">الإشعارات الحقيقية تحتاج ربط التطبيق بمصدر بيانات موثوق وتشغيل خدمة تنبيهات.</p></div></div></section>
- <div class="notice"><b>تنبيه مهم:</b> كل الأرقام والإشارات الظاهرة في هذه النسخة افتراضية لا تمثل السوق الحقيقي ولا تصلح لاتخاذ قرار استثماري. لن نعرض إشارات حقيقية حتى نربط التطبيق بمصدر بيانات مرخّص ونتحقق من دقته.</div>
+<div class="card">
+<div class="label">قيمة التداول</div>
+<div class="value">--</div>
+<div class="muted">MAD</div>
+</div>
+
+<div class="card">
+<div class="label">ضغط الشراء</div>
+<div class="value up">--</div>
+<div class="muted">بانتظار بيانات الصفقات</div>
+</div>
+
+<div class="card">
+<div class="label">الأسهم في قائمتي</div>
+<div class="value" id="stockCount">0</div>
+<div class="muted">أسهم محفوظة</div>
+</div>
+
+</div>
+
+<nav>
+<button class="active" onclick="showTab('market',this)">السوق</button>
+<button onclick="showTab('radar',this)">رادار السيولة</button>
+<button onclick="showTab('watch',this)">قائمتي</button>
+<button onclick="showTab('alerts',this)">التنبيهات</button>
+</nav>
+
+<!-- السوق -->
+
+<section id="market">
+
+<h2>مراقبة السوق</h2>
+
+<div class="card">
+<p>مرحباً بك في BOURSE RADAR MAROC.</p>
+<p class="muted">
+سيتم عرض أسعار الأسهم الحقيقية بعد ربط التطبيق بمصدر البيانات.
+</p>
+</div>
+
+</section>
+
+<!-- رادار السيولة -->
+
+<section id="radar" style="display:none">
+
+<h2>رادار السيولة والصفقات الكبيرة</h2>
+
+<div class="card">
+
+<div class="label">ضغط الشراء</div>
+<div class="value up">بانتظار البيانات</div>
+
+<div class="meter"><div style="width:0%"></div></div>
+
+<div class="label">ضغط البيع</div>
+<div class="value down">بانتظار البيانات</div>
+
+<p class="muted">
+سيتم احتساب ضغط الشراء والبيع عند ربط التطبيق ببيانات الصفقات.
+</p>
+
+</div>
+
+<div class="card">
+<h3>نشاط الحجم</h3>
+<p>مقارنة حجم التداول بالمتوسط التاريخي.</p>
+<p class="gold">بانتظار البيانات</p>
+</div>
+
+</section>
+
+<!-- قائمة الأسهم -->
+
+<section id="watch" style="display:none">
+
+<h2>قائمتي لمتابعة الأسهم</h2>
+
+<div class="card">
+
+<p class="muted">أضف الأسهم التي تريد مراقبتها.</p>
+
+<label>رمز السهم</label>
+<input id="ticker" placeholder="مثلاً ADI أو DHO أو RDS">
+
+<label>ملاحظاتك حول السهم</label>
+<textarea id="stockNote" placeholder="سعر الشراء، هدف البيع، الدعم، المقاومة..."></textarea>
+
+<button onclick="addStock()">+ إضافة السهم</button>
+
+</div>
+
+<div class="card">
+
+<h2>الأسهم التي أراقبها</h2>
+
+<div id="mylist"></div>
+
+</div>
+
+</section>
+
+<!-- التنبيهات -->
+
+<section id="alerts" style="display:none">
+
+<h2>مركز التنبيهات</h2>
+
+<div class="card">
+<p>لا توجد تنبيهات جديدة.</p>
+<p class="muted">
+سيتم تفعيل التنبيهات الحقيقية بعد ربط التطبيق ببيانات السوق.
+</p>
+</div>
+
+</section>
+
+<div class="notice">
+<strong>تنبيه:</strong>
+التطبيق حالياً نموذج تجريبي. لا يعرض أسعاراً حقيقية ولا يصدر توصيات شراء أو بيع فعلية.
+</div>
+
 </main>
-<footer>BOURSE RADAR MAROC · نموذج أولي للتصميم · لا يتصل حالياً ببيانات السوق</footer>
+
+<footer>
+BOURSE RADAR MAROC · مشروعك لمراقبة بورصة الدار البيضاء
+</footer>
+
 <script>
-function showTab(id,btn){document.querySelectorAll('main section').forEach(s=>s.style.display='none');document.getElementById(id).style.display='block';document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
-function addStock(){let v=document.getElementById('ticker').value.trim().toUpperCase();if(!v)return;let li=document.createElement('li');li.textContent=v+' — مضاف للمراقبة';document.getElementById('mylist').appendChild(li);document.getElementById('ticker').value=''}
-if('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('./sw.js');
-</script>list.innerHTML
-</body></html>
+
+// قراءة الأسهم المحفوظة
+let stocks=JSON.parse(localStorage.getItem('myStocks')||'[]');
+
+// التنقل بين الأقسام
+function showTab(id,btn){
+
+document.querySelectorAll('main section').forEach(s=>{
+s.style.display='none';
+});
+
+document.getElementById(id).style.display='block';
+
+document.querySelectorAll('nav button').forEach(b=>{
+b.classList.remove('active');
+});
+
+btn.classList.add('active');
+
+}
+
+// إضافة سهم
+function addStock(){
+
+let ticker=document.getElementById('ticker').value.trim().toUpperCase();
+
+let note=document.getElementById('stockNote').value.trim();
+
+if(!ticker){
+alert('المرجو إدخال رمز السهم');
+return;
+}
+
+if(stocks.some(s=>s.ticker===ticker)){
+alert('هذا السهم موجود بالفعل');
+return;
+}
+
+stocks.push({
+ticker:ticker,
+note:note
+});
+
+saveStocks();
+
+document.getElementById('ticker').value='';
+document.getElementById('stockNote').value='';
+
+alert('تمت إضافة السهم بنجاح');
+
+}
+
+// حذف سهم
+function deleteStock(index){
+
+if(confirm('هل تريد حذف هذا السهم؟')){
+
+stocks.splice(index,1);
+
+saveStocks();
+
+}
+
+}
+
+// حفظ الأسهم
+function saveStocks(){
+
+localStorage.setItem('myStocks',JSON.stringify(stocks));
+
+displayStocks();
+
+}
+
+// عرض الأسهم
+function displayStocks(){
+
+let list=document.getElementById('mylist');
+
+list.innerHTML='';
+
+stocks.forEach((stock,index)=>{
+
+let div=document.createElement('div');
+
+div.className='stock';
+
+let title=document.createElement('strong');
+title.textContent=stock.ticker;
+
+let note=document.createElement('p');
+note.textContent=stock.note||'لا توجد ملاحظات';
+
+note.className='muted';
+
+let btn=document.createElement('button');
+btn.textContent='حذف السهم';
+btn.className='delete';
+
+btn.onclick=()=>deleteStock(index);
+
+div.appendChild(title);
+div.appendChild(note);
+div.appendChild(btn);
+
+list.appendChild(div);
+
+});
+
+document.getElementById('stockCount').textContent=stocks.length;
+
+}
+
+// تحميل القائمة عند فتح التطبيق
+displayStocks();
+
+// تشغيل Service Worker
+if('serviceWorker' in navigator &&
+location.protocol.startsWith('http')){
+
+navigator.serviceWorker.register('./sw.js')
+.catch(error=>console.log(error));
+
+}
+
+</script>
+
+</body>
+</html>
