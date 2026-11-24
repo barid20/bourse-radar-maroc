@@ -4,16 +4,13 @@ import io
 import json
 import os
 import re
-from datetime import datetime, timezone
-import requests
-from bs4 import BeautifulSoup
+from datetime import datetime, timedelta, timezone
 from openpyxl import load_workbook
 
-LIVE_MARKET_URL = os.getenv(
-    "LIVE_MARKET_URL", "https://www.casablanca-bourse.com/live-market/overview"
-).strip()
 DATA_DIR = os.getenv("DATA_DIR", "imports").strip()
 OUT_FILE = "data.json"
+# اختياري: حدد رموز الأسهم مفصولة بفاصلة مثل "ADH,AKT,ADI" أو اتركه فارغاً لجلب السوق المباشر
+TARGET_TICKERS = [t.strip().upper() for t in os.getenv("TARGET_TICKERS", "").split(",") if t.strip()]
 
 
 def to_num(val):
@@ -21,15 +18,7 @@ def to_num(val):
         return 0.0
     if isinstance(val, (int, float)):
         return float(val) if val == val else 0.0
-    s = (
-        str(val)
-        .strip()
-        .replace("\u00a0", "")
-        .replace(" ", "")
-        .replace("٬", "")
-        .replace("٫", ".")
-        .replace("%", "")
-    )
+    s = str(val).strip().replace("\u00a0", "").replace(" ", "").replace("٬", "").replace("٫", ".")
     if not s:
         return 0.0
     if "," in s and "." not in s:
@@ -64,18 +53,6 @@ def parse_date_iso(val):
     return ""
 
 
-def infer_ticker(name_or_path):
-    base = os.path.splitext(os.path.basename(name_or_path))[0].upper()
-    parts = [p for p in re.split(r"[\s_-]+", base) if p]
-    if not parts:
-        return ""
-    if parts[0] in ("COURS", "HISTO", "DATA", "CSE", "BVC") and len(parts) > 1:
-        cand = re.sub(r"[^A-Z0-9.-]", "", parts[1])
-        if cand:
-            return cand
-    return re.sub(r"[^A-Z0-9.-]", "", parts[0])
-
-
 def pick(row_norm, aliases):
     for a in aliases:
         nk = norm_key(a)
@@ -93,10 +70,8 @@ def normalize_row(raw, fallback_ticker="", fallback_date=""):
         .strip()
         .upper(),
     )
-    date = parse_date_iso(pick(rn, ["date", "session", "seance", "séance", "heure", "time"])) or fallback_date
-    close = to_num(
-        pick(rn, ["close", "lastprice", "derniercours", "coursdecloture", "cours", "last", "price"])
-    )
+    date = parse_date_iso(pick(rn, ["date", "session", "seance", "séance"])) or fallback_date
+    close = to_num(pick(rn, ["close", "lastprice", "derniercours", "coursdecloture", "cours", "last"]))
     if not ticker or not date or close <= 0:
         return None
 
@@ -119,25 +94,76 @@ def normalize_row(raw, fallback_ticker="", fallback_date=""):
     }
 
 
-def parse_csv_bytes(content_bytes, fallback_ticker):
+def fetch_from_casabourse():
+    rows = []
+    try:
+        import casabourse as cb
+    except ImportError:
+        print("casabourse not installed; skipping library fetch")
+        return rows
+
+    today_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+
+    if hasattr(cb, "get_live_market_data"):
+        try:
+            df_live = cb.get_live_market_data()
+            if df_live is not None and not getattr(df_live, "empty", True):
+                for rec in df_live.to_dict(orient="records"):
+                    normed = normalize_row(rec, fallback_date=today_iso)
+                    if normed:
+                        rows.append(normed)
+        except Exception as e:
+            print(f"get_live_market_data note: {e}")
+
+    if TARGET_TICKERS and hasattr(cb, "get_historical_data_auto"):
+        start_str = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
+        end_str = today_iso
+        for tkr in TARGET_TICKERS:
+            try:
+                df_hist = cb.get_historical_data_auto(tkr, start_str, end_str)
+                if df_hist is not None and not getattr(df_hist, "empty", True):
+                    for rec in df_hist.to_dict(orient="records"):
+                        normed = normalize_row(rec, fallback_ticker=tkr, fallback_date=today_iso)
+                        if normed:
+                            rows.append(normed)
+            except Exception as e:
+                print(f"get_historical_data_auto({tkr}) note: {e}")
+
+    return rows
+
+
+def infer_ticker(filepath):
+    base = os.path.splitext(os.path.basename(filepath))[0].upper()
+    parts = [p for p in re.split(r"[\s_-]+", base) if p]
+    if not parts:
+        return ""
+    if parts[0] in ("COURS", "HISTO", "DATA", "CSE", "BVC") and len(parts) > 1:
+        cand = re.sub(r"[^A-Z0-9.-]", "", parts[1])
+        if cand:
+            return cand
+    return re.sub(r"[^A-Z0-9.-]", "", parts[0])
+
+
+def parse_csv_file(filepath, fallback_ticker):
+    with open(filepath, "rb") as f:
+        raw = f.read()
     text = None
     for enc in ("utf-8-sig", "cp1252", "latin-1"):
         try:
-            text = content_bytes.decode(enc)
+            text = raw.decode(enc)
             break
         except UnicodeDecodeError:
             continue
     if not text:
         return []
     lines = [ln for ln in text.splitlines() if ln.strip()]
-    first_line = lines[0] if lines else ""
-    delimiter = ";" if first_line.count(";") > first_line.count(",") else ","
+    delimiter = ";" if lines and lines[0].count(";") > lines[0].count(",") else ","
     reader = csv.DictReader(io.StringIO("\n".join(lines)), delimiter=delimiter)
-    return [rec for row in reader if (rec := normalize_row(row, fallback_ticker))]
+    return [rec for r in reader if (rec := normalize_row(r, fallback_ticker))]
 
 
-def parse_xlsx_bytes(content_bytes, fallback_ticker):
-    wb = load_workbook(filename=io.BytesIO(content_bytes), data_only=True)
+def parse_xlsx_file(filepath, fallback_ticker):
+    wb = load_workbook(filename=filepath, data_only=True)
     ws = wb.active
     rows = list(ws.iter_rows(values_only=True))
     if not rows:
@@ -154,54 +180,25 @@ def parse_xlsx_bytes(content_bytes, fallback_ticker):
     return out
 
 
-def parse_bytes_by_name(content_bytes, name_hint):
-    ext = os.path.splitext(name_hint.lower())[1]
-    fb = infer_ticker(name_hint)
-    if ext in (".xlsx", ".xlsm"):
-        return parse_xlsx_bytes(content_bytes, fb)
-    return parse_csv_bytes(content_bytes, fb)
+def scan_folder():
+    if not os.path.isdir(DATA_DIR):
+        return [], []
+    files = sorted(
+        glob.glob(os.path.join(DATA_DIR, "*.csv"))
+        + glob.glob(os.path.join(DATA_DIR, "*.xlsx"))
+        + glob.glob(os.path.join(DATA_DIR, "*.xlsm"))
+    )
+    out = []
+    for fp in files:
+        fb = infer_ticker(fp)
+        if fp.lower().endswith((".xlsx", ".xlsm")):
+            out.extend(parse_xlsx_file(fp, fb))
+        else:
+            out.extend(parse_csv_file(fp, fb))
+    return files, out
 
 
-def fetch_live_market_rows():
-    if not LIVE_MARKET_URL:
-        return []
-    today_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-    try:
-        resp = requests.get(
-            LIVE_MARKET_URL,
-            headers={
-                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36",
-                "Accept-Language": "fr-FR,fr;q=0.9,en;q=0.8",
-            },
-            timeout=25,
-        )
-        resp.raise_for_status()
-        soup = BeautifulSoup(resp.text, "html.parser")
-        extracted = []
-
-        for table in soup.find_all("table"):
-            trs = table.find_all("tr")
-            if len(trs) < 2:
-                continue
-            headers = [th.get_text(" ", strip=True) for th in trs[0].find_all(["th", "td"])]
-            if not headers:
-                continue
-            for tr in trs[1:]:
-                cells = [td.get_text(" ", strip=True) for td in tr.find_all(["td", "th"])]
-                if len(cells) < 2:
-                    continue
-                obj = {headers[i]: cells[i] for i in range(min(len(headers), len(cells)))}
-                rec = normalize_row(obj, fallback_date=today_iso)
-                if rec:
-                    extracted.append(rec)
-
-        return extracted
-    except Exception as e:
-        print(f"Live market fetch note: {e}")
-        return []
-
-
-def load_existing_records():
+def load_existing():
     if not os.path.exists(OUT_FILE):
         return []
     try:
@@ -215,35 +212,19 @@ def load_existing_records():
     return [rec for item in items if isinstance(item, dict) and (rec := normalize_row(item))]
 
 
-def scan_folder():
-    if not os.path.isdir(DATA_DIR):
-        return [], []
-    files = sorted(
-        glob.glob(os.path.join(DATA_DIR, "*.csv"))
-        + glob.glob(os.path.join(DATA_DIR, "*.xlsx"))
-        + glob.glob(os.path.join(DATA_DIR, "*.xlsm"))
-    )
-    rows = []
-    for fp in files:
-        with open(fp, "rb") as f:
-            rows.extend(parse_bytes_by_name(f.read(), fp))
-    return files, rows
-
-
 def main():
-    merged = {f"{r['ticker']}_{r['date']}": r for r in load_existing_records()}
+    merged = {f"{r['ticker']}_{r['date']}": r for r in load_existing()}
     files, folder_rows = scan_folder()
-    live_rows = fetch_live_market_rows()
+    cb_rows = fetch_from_casabourse()
 
-    for rec in folder_rows + live_rows:
+    for rec in folder_rows + cb_rows:
         merged[f"{rec['ticker']}_{rec['date']}"] = rec
 
     sorted_records = sorted(merged.values(), key=lambda x: (x["date"], x["ticker"]))
     payload = {
         "updatedAt": datetime.now(timezone.utc).isoformat(),
-        "sourceUrl": LIVE_MARKET_URL,
         "filesProcessed": [os.path.basename(p) for p in files],
-        "liveRowsExtracted": len(live_rows),
+        "casabourseRows": len(cb_rows),
         "count": len(sorted_records),
         "records": sorted_records,
     }
@@ -251,10 +232,7 @@ def main():
     with open(OUT_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
-    print(
-        f"Folder files: {len(files)}, folder rows: {len(folder_rows)}, "
-        f"live rows: {len(live_rows)}, total: {len(sorted_records)}"
-    )
+    print(f"Folder rows: {len(folder_rows)}, Casabourse rows: {len(cb_rows)}, total: {len(sorted_records)}")
 
 
 if __name__ == "__main__":
