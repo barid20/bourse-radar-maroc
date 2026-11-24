@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 
 DATA_DIR = os.getenv("DATA_DIR", "imports").strip()
 OUT_FILE = "data.json"
-# اختياري: حدد رموز الأسهم مفصولة بفاصلة مثل "ADH,AKT,ADI" أو اتركه فارغاً لجلب السوق المباشر
+# اختياري: أضف رموز أسهم محددة مثل "ADH,ATW,IAM,BCP,LHM" أو اتركه فارغاً لجلب السوق المباشر بالكامل
 TARGET_TICKERS = [t.strip().upper() for t in os.getenv("TARGET_TICKERS", "").split(",") if t.strip()]
 
 
@@ -66,12 +66,14 @@ def normalize_row(raw, fallback_ticker="", fallback_date=""):
     ticker = re.sub(
         r"[^A-Z0-9.-]",
         "",
-        str(pick(rn, ["ticker", "code", "symbole", "mnemonic", "instrument"]) or fallback_ticker)
+        str(pick(rn, ["ticker", "code", "symbole", "mnemonic", "instrument", "symbol"]) or fallback_ticker)
         .strip()
         .upper(),
     )
-    date = parse_date_iso(pick(rn, ["date", "session", "seance", "séance"])) or fallback_date
-    close = to_num(pick(rn, ["close", "lastprice", "derniercours", "coursdecloture", "cours", "last"]))
+    date = parse_date_iso(pick(rn, ["date", "session", "seance", "séance", "datetime"])) or fallback_date
+    close = to_num(
+        pick(rn, ["close", "lastprice", "derniercours", "coursdecloture", "cours", "last", "price", "value"])
+    )
     if not ticker or not date or close <= 0:
         return None
 
@@ -82,14 +84,14 @@ def normalize_row(raw, fallback_ticker="", fallback_date=""):
 
     return {
         "ticker": ticker,
-        "name": str(pick(rn, ["name", "instrument", "valeur", "libelle"]) or ticker).strip(),
+        "name": str(pick(rn, ["name", "instrument", "valeur", "libelle", "label"]) or ticker).strip(),
         "date": date,
         "open": open_p,
         "close": close,
         "high": high_p,
         "low": low_p,
-        "volume": to_num(pick(rn, ["volume", "volumemad", "capitaux", "montant"])),
-        "shares": to_num(pick(rn, ["shares", "tradedshares", "titresechanges", "quantite"])),
+        "volume": to_num(pick(rn, ["volume", "volumemad", "capitaux", "montant", "turnover"])),
+        "shares": to_num(pick(rn, ["shares", "tradedshares", "titresechanges", "quantite", "qty"])),
         "trades": to_num(pick(rn, ["trades", "numberoftrades", "nbtransactions", "transactions"])),
     }
 
@@ -98,36 +100,40 @@ def fetch_from_casabourse():
     rows = []
     try:
         import casabourse as cb
-    except ImportError:
-        print("casabourse not installed; skipping library fetch")
+    except ImportError as e:
+        print(f"casabourse import error: {e}")
         return rows
 
     today_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
-    if hasattr(cb, "get_live_market_data"):
-        try:
-            df_live = cb.get_live_market_data()
-            if df_live is not None and not getattr(df_live, "empty", True):
-                for rec in df_live.to_dict(orient="records"):
-                    normed = normalize_row(rec, fallback_date=today_iso)
-                    if normed:
-                        rows.append(normed)
-        except Exception as e:
-            print(f"get_live_market_data note: {e}")
+    for fn_name in ("get_live_market_data", "get_market_data"):
+        fn = getattr(cb, fn_name, None)
+        if callable(fn):
+            try:
+                df_live = fn()
+                if df_live is not None and not getattr(df_live, "empty", True):
+                    print(f"{fn_name} columns:", list(df_live.columns))
+                    for rec in df_live.to_dict(orient="records"):
+                        normed = normalize_row(rec, fallback_date=today_iso)
+                        if normed:
+                            rows.append(normed)
+                if rows:
+                    break
+            except Exception as e:
+                print(f"{fn_name} error: {e}")
 
     if TARGET_TICKERS and hasattr(cb, "get_historical_data_auto"):
         start_str = (datetime.now(timezone.utc) - timedelta(days=30)).strftime("%Y-%m-%d")
-        end_str = today_iso
         for tkr in TARGET_TICKERS:
             try:
-                df_hist = cb.get_historical_data_auto(tkr, start_str, end_str)
+                df_hist = cb.get_historical_data_auto(tkr, start_str, today_iso)
                 if df_hist is not None and not getattr(df_hist, "empty", True):
                     for rec in df_hist.to_dict(orient="records"):
                         normed = normalize_row(rec, fallback_ticker=tkr, fallback_date=today_iso)
                         if normed:
                             rows.append(normed)
             except Exception as e:
-                print(f"get_historical_data_auto({tkr}) note: {e}")
+                print(f"get_historical_data_auto({tkr}) error: {e}")
 
     return rows
 
