@@ -34,6 +34,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add data.json
           git diff --staged --quiet || git commit -m "chore: update data.json"
-          git pull --rebase --autostash origin main
-          git push || (git pull --rebase --autostash origin main && git push)
+          git fetch origin main
+          git rebase -X theirs origin/main || (git rebase --abort && git merge -X ours origin/main -m "chore: sync main")
+          git push origin main
 
