@@ -21,7 +21,9 @@ jobs:
           python-version: "3.11"
 
       - name: Install packages
-        run: pip install requests beautifulsoup4 openpyxl pandas git+https://github.com/Fredysessie/Casabourse.git
+        run: |
+          pip install requests beautifulsoup4 openpyxl pandas
+          pip install --no-deps git+https://github.com/Fredysessie/Casabourse.git || true
 
       - name: Run updater script
         run: python scripts/update_data.py
@@ -30,6 +32,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
+          git pull --rebase origin main || true
           git add data.json
           git diff --staged --quiet || git commit -m "chore: update data.json"
           git push
