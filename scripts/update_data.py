@@ -138,6 +138,54 @@ def fetch_from_casabourse():
     return rows
 
 
+def fetch_fallback_market_data():
+    rows = []
+    today_iso = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    try:
+        import requests
+        from bs4 import BeautifulSoup
+    except ImportError:
+        return rows
+
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
+        "Accept": "application/json, text/html, */*",
+    }
+
+    candidate_urls = [
+        "https://www.casablanca-bourse.com/en/live-market",
+        "https://www.casablanca-bourse.com/fr/live-market",
+    ]
+
+    for url in candidate_urls:
+        try:
+            resp = requests.get(url, headers=headers, timeout=15)
+            if resp.status_code != 200 or not resp.text:
+                continue
+            soup = BeautifulSoup(resp.text, "html.parser")
+            for table in soup.find_all("table"):
+                tr_list = table.find_all("tr")
+                if len(tr_list) < 2:
+                    continue
+                raw_headers = [th.get_text(" ", strip=True) for th in tr_list[0].find_all(["th", "td"])]
+                if not raw_headers:
+                    continue
+                for tr in tr_list[1:]:
+                    cells = [td.get_text(" ", strip=True) for td in tr.find_all(["td", "th"])]
+                    if not any(cells):
+                        continue
+                    obj = {raw_headers[i]: (cells[i] if i < len(raw_headers) else "") for i in range(len(cells))}
+                    normed = normalize_row(obj, fallback_date=today_iso)
+                    if normed:
+                        rows.append(normed)
+            if rows:
+                break
+        except Exception as e:
+            print(f"fallback fetch error ({url}): {e}")
+
+    return rows
+
+
 def infer_ticker(filepath):
     base = os.path.splitext(os.path.basename(filepath))[0].upper()
     parts = [p for p in re.split(r"[\s_-]+", base) if p]
@@ -222,8 +270,9 @@ def main():
     merged = {f"{r['ticker']}_{r['date']}": r for r in load_existing()}
     files, folder_rows = scan_folder()
     cb_rows = fetch_from_casabourse()
+    fb_rows = fetch_fallback_market_data() if not cb_rows else []
 
-    for rec in folder_rows + cb_rows:
+    for rec in folder_rows + cb_rows + fb_rows:
         merged[f"{rec['ticker']}_{rec['date']}"] = rec
 
     sorted_records = sorted(merged.values(), key=lambda x: (x["date"], x["ticker"]))
@@ -231,6 +280,7 @@ def main():
         "updatedAt": datetime.now(timezone.utc).isoformat(),
         "filesProcessed": [os.path.basename(p) for p in files],
         "casabourseRows": len(cb_rows),
+        "fallbackRows": len(fb_rows),
         "count": len(sorted_records),
         "records": sorted_records,
     }
@@ -238,7 +288,10 @@ def main():
     with open(OUT_FILE, "w", encoding="utf-8") as f:
         json.dump(payload, f, ensure_ascii=False, indent=2)
 
-    print(f"Folder rows: {len(folder_rows)}, Casabourse rows: {len(cb_rows)}, total: {len(sorted_records)}")
+    print(
+        f"Folder rows: {len(folder_rows)}, Casabourse rows: {len(cb_rows)}, "
+        f"Fallback rows: {len(fb_rows)}, total: {len(sorted_records)}"
+    )
 
 
 if __name__ == "__main__":
