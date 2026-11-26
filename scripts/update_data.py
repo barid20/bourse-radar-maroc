@@ -9,7 +9,7 @@ from openpyxl import load_workbook
 
 DATA_DIR = os.getenv("DATA_DIR", "imports").strip()
 OUT_FILE = "data.json"
-# اختياري: أضف رموز أسهم محددة مثل "ADH,ATW,IAM,BCP,LHM" أو اتركه فارغاً لجلب السوق المباشر بالكامل
+# Optionnel : ajoute des tickers séparés par des virgules ex: "ADH,ATW,IAM,BCP,LHM"
 TARGET_TICKERS = [t.strip().upper() for t in os.getenv("TARGET_TICKERS", "").split(",") if t.strip()]
 
 
@@ -149,17 +149,20 @@ def fetch_fallback_market_data():
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36",
-        "Accept": "application/json, text/html, */*",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+        "Accept-Language": "en-US,en;q=0.9,fr;q=0.8",
     }
 
     candidate_urls = [
         "https://www.casablanca-bourse.com/en/live-market",
         "https://www.casablanca-bourse.com/fr/live-market",
+        "https://www.casablanca-bourse.ma/en/live-market",
+        "https://www.casablanca-bourse.ma/fr/live-market",
     ]
 
     for url in candidate_urls:
         try:
-            resp = requests.get(url, headers=headers, timeout=15)
+            resp = requests.get(url, headers=headers, timeout=8)
             if resp.status_code != 200 or not resp.text:
                 continue
             soup = BeautifulSoup(resp.text, "html.parser")
@@ -181,7 +184,7 @@ def fetch_fallback_market_data():
             if rows:
                 break
         except Exception as e:
-            print(f"fallback fetch error ({url}): {e}")
+            print(f"fallback fetch error ({url}): {type(e).__name__}: {e}")
 
     return rows
 
@@ -267,12 +270,14 @@ def load_existing():
 
 
 def main():
-    merged = {f"{r['ticker']}_{r['date']}": r for r in load_existing()}
+    existing_records = load_existing()
+    merged = {f"{r['ticker']}_{r['date']}": r for r in existing_records}
     files, folder_rows = scan_folder()
     cb_rows = fetch_from_casabourse()
     fb_rows = fetch_fallback_market_data() if not cb_rows else []
 
-    for rec in folder_rows + cb_rows + fb_rows:
+    new_rows = folder_rows + cb_rows + fb_rows
+    for rec in new_rows:
         merged[f"{rec['ticker']}_{rec['date']}"] = rec
 
     sorted_records = sorted(merged.values(), key=lambda x: (x["date"], x["ticker"]))
