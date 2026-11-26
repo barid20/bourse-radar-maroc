@@ -1,8 +1,71 @@
 {
-  "updatedAt": "2026-11-26T10:43:59.651974+00:00",
-  "filesProcessed": [],
+  "updatedAt": "2026-11-26T19:52:50.772961+00:00",
+  "filesProcessed": [
+    "market.csv"
+  ],
   "casabourseRows": 0,
   "fallbackRows": 0,
-  "count": 0,
-  "records": []
+  "count": 5,
+  "records": [
+    {
+      "ticker": "ADH",
+      "name": "Douja Prom Addoha",
+      "date": "2026-11-26",
+      "open": 28.4,
+      "close": 29.1,
+      "high": 29.5,
+      "low": 28.1,
+      "volume": 640000.0,
+      "shares": 22150.0,
+      "trades": 142.0
+    },
+    {
+      "ticker": "ATW",
+      "name": "Attijariwafa Bank",
+      "date": "2026-11-26",
+      "open": 540.0,
+      "close": 545.0,
+      "high": 548.0,
+      "low": 539.0,
+      "volume": 3200000.0,
+      "shares": 5890.0,
+      "trades": 185.0
+    },
+    {
+      "ticker": "BCP",
+      "name": "Banque Centrale Populaire",
+      "date": "2026-11-26",
+      "open": 285.0,
+      "close": 287.5,
+      "high": 289.0,
+      "low": 284.0,
+      "volume": 980000.0,
+      "shares": 3420.0,
+      "trades": 94.0
+    },
+    {
+      "ticker": "IAM",
+      "name": "Maroc Telecom",
+      "date": "2026-11-26",
+      "open": 95.0,
+      "close": 96.2,
+      "high": 96.8,
+      "low": 94.8,
+      "volume": 1450000.0,
+      "shares": 15120.0,
+      "trades": 210.0
+    },
+    {
+      "ticker": "LHM",
+      "name": "LafargeHolcim Maroc",
+      "date": "2026-11-26",
+      "open": 1890.0,
+      "close": 1905.0,
+      "high": 1915.0,
+      "low": 1885.0,
+      "volume": 1150000.0,
+      "shares": 605.0,
+      "trades": 68.0
+    }
+  ]
 }
