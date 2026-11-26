@@ -68,7 +68,7 @@ footer{text-align:center;color:var(--muted);padding:25px;font-size:12px}
   <div class="wrap">
     <h1>📡 BOURSE RADAR MAROC</h1>
     <p>رادار بورصة الدار البيضاء · التحليل الفني ورصد السيولة التاريخية</p>
-    <span class="badge">نسخة محلية · استيراد بيانات Excel وتحديث JSON</span>
+    <span class="badge">تحديث تلقائي من JSON · استيراد بيانات Excel وتحديث محلي</span>
   </div>
 </header>
 
@@ -202,7 +202,7 @@ footer{text-align:center;color:var(--muted);padding:25px;font-size:12px}
   <!-- استيراد وتحديث البيانات -->
   <section id="import" class="section panel">
     <h3>استيراد وتحديث بيانات بورصة الدار البيضاء</h3>
-    <p class="muted">اختر عدة ملفات Excel أو CSV، أو حدّث من ملف JSON خارجي. الدمج يحدّث السجلات المتطابقة ولا يحذف تاريخك السابق.</p>
+    <p class="muted">يتم التحقق من ./data.json تلقائياً عند فتح الصفحة، ويمكنك أيضاً استيراد ملفات Excel/CSV أو تحديث الرابط يدوياً.</p>
 
     <input type="file" id="excelFiles" accept=".xlsx,.xls,.csv" multiple>
     <div class="row">
@@ -239,7 +239,7 @@ footer{text-align:center;color:var(--muted);padding:25px;font-size:12px}
   </section>
 </main>
 
-<footer>BOURSE RADAR MAROC · البيانات المحلية محفوظة على هذا الجهاز · لا توجد تغذية مباشرة للأسعار</footer>
+<footer>BOURSE RADAR MAROC · مزامنة تلقائية مع ./data.json وتخزين محلي على المتصفح</footer>
 
 <script>
 "use strict";
@@ -889,4 +889,130 @@ function parseSheetRows(rows, fileName) {
 
   const colMap = {};
   clean[headerRowIdx].forEach((cell, idx) => {
-    
+    const n = norm(cell);
+    for (const [field, list] of Object.entries(aliases)) {
+      if (colMap[field] === undefined && list.some(a => norm(a) === n || (n.length >= 4 && n.includes(norm(a))))) {
+        colMap[field] = idx;
+      }
+    }
+  });
+
+  if (colMap.close === undefined && colMap.date === undefined) return [];
+
+  const base = fileName.replace(/\.[^.]+$/, "").toUpperCase();
+  const parts = base.split(/[\s_-]+/).filter(Boolean);
+  const fileTicker = (["COURS", "HISTO", "DATA", "CSE", "BVC"].includes(parts[0]) && parts[1] ? parts[1] : parts[0] || "").replace(/[^A-Z0-9.-]/g, "");
+
+  const out = [];
+  for (let i = headerRowIdx + 1; i < clean.length; i++) {
+    const row = clean[i];
+    const get = f => colMap[f] !== undefined ? row[colMap[f]] : "";
+    const date = parseDate(get("date"));
+    const close = num(get("close"));
+    const ticker = String(get("ticker") || fileTicker || "").trim().toUpperCase().replace(/[^A-Z0-9.-]/g, "");
+    if (!ticker || !date || close <= 0) continue;
+
+    const open = num(get("open")) || close;
+    const high = Math.max(close, open, num(get("high")));
+    const lowRaw = num(get("low"));
+    const low = lowRaw > 0 ? Math.min(close, open, lowRaw) : Math.min(close, open);
+
+    out.push({
+      ticker,
+      name: String(get("name") || ticker).trim() || ticker,
+      date, open, close, high, low,
+      volume: num(get("volume")),
+      shares: num(get("shares")),
+      trades: num(get("trades")),
+      cap: num(get("cap"))
+    });
+  }
+  return out;
+}
+
+async function readExcelFile(file) {
+  const buf = await file.arrayBuffer();
+  const wb = XLSX.read(buf, { type: "array", cellDates: true });
+  let parsed = [];
+  for (const name of wb.SheetNames) {
+    const rows = XLSX.utils.sheet_to_json(wb.Sheets[name], { header: 1, raw: true, defval: "" });
+    parsed = parsed.concat(parseSheetRows(rows, file.name));
+  }
+  return parsed;
+}
+
+async function syncFromUrl(url, silent = false) {
+  const target = (url || "./data.json").trim();
+  const btn = $("syncJsonBtn");
+  if (btn) btn.disabled = true;
+  if (!silent) $("importStatus").textContent = "جاري جلب البيانات من الرابط...";
+  try {
+    const resp = await fetch(target, { cache: "no-store" });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const data = await resp.json();
+    const list = extractJsonList(data);
+    if (!list.length) {
+      if (!silent) $("importStatus").textContent = `تم الاتصال بـ ${target} ولكن لا توجد سجلات في records بعد.`;
+      return;
+    }
+    const res = mergeRecords(list);
+    $("importStatus").textContent = `تم التحديث من ${target}: أُضيف ${res.added} وحُدّث ${res.updated} سجل.`;
+  } catch (err) {
+    if (!silent) $("importStatus").textContent = "فشل التحديث من الرابط: " + err.message;
+  } finally {
+    if (btn) btn.disabled = false;
+  }
+}
+
+function openStock(t) {
+  if (!t) return;
+  $("analysisTicker").value = t;
+  $("whaleTicker").value = t;
+  selectedWhalePeriodIdx = 0;
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b.dataset.tab === "analysis"));
+  document.querySelectorAll(".section").forEach(s => s.classList.toggle("active", s.id === "analysis"));
+  renderAnalysis();
+}
+
+$("mainNav").addEventListener("click", e => {
+  const tab = e.target.closest(".tab");
+  if (!tab) return;
+  const name = tab.dataset.tab;
+  document.querySelectorAll(".tab").forEach(b => b.classList.toggle("active", b === tab));
+  document.querySelectorAll(".section").forEach(s => s.classList.toggle("active", s.id === name));
+  if (name === "analysis") renderAnalysis();
+  if (name === "whales") renderWhales();
+  if (name === "radar") renderRadar();
+  if (name === "ranking") renderRanking();
+  if (name === "watch") renderWatch();
+});
+
+document.addEventListener("click", e => {
+  const whaleRow = e.target.closest("[data-whale-idx]");
+  if (whaleRow) {
+    selectedWhalePeriodIdx = Number(whaleRow.dataset.whaleIdx) || 0;
+    renderWhales();
+    return;
+  }
+  const openEl = e.target.closest("[data-open]");
+  if (openEl) return openStock(openEl.dataset.open);
+  const delEl = e.target.closest("[data-del]");
+  if (delEl) {
+    const list = getWatch();
+    list.splice(Number(delEl.dataset.del), 1);
+    localStorage.setItem(WATCH_KEY, JSON.stringify(list));
+    renderWatch();
+  }
+});
+
+$("searchStock").addEventListener("input", renderMarket);
+$("sortMarket").addEventListener("change", renderMarket);
+$("analysisTicker").addEventListener("change", renderAnalysis);
+$("whaleTicker").addEventListener("change", () => { selectedWhalePeriodIdx = 0; renderWhales(); });
+$("whaleSensitivity").addEventListener("change", () => { selectedWhalePeriodIdx = 0; renderWhales(); });
+
+$("importBtn").addEventListener("click", async () => {
+  const files = [...$("excelFiles").files];
+  if (!files.length) return alert("اختر ملف Excel أو CSV أولاً.");
+  const btn = $("importBtn");
+  btn.disabled = true;
